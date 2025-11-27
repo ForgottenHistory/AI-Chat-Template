@@ -19,7 +19,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			contextTags,
 			additionalPrompt,
 			negativePrompt,
-			settings
+			settings,
+			mainPromptOverride,
+			negativePromptOverride
 		} = await request.json();
 
 		const result = await sdService.generateImage({
@@ -27,7 +29,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			contextTags,
 			additionalPrompt,
 			negativePrompt,
-			settings
+			settings,
+			mainPromptOverride,
+			negativePromptOverride
 		});
 
 		if (!result.success) {

@@ -48,7 +48,7 @@ export const PUT: RequestHandler = async ({ params, cookies, request }) => {
 
 	try {
 		const body = await request.json();
-		const { name, tags, description, cardData } = body;
+		const { name, tags, description, cardData, imageTags, contextualTags, mainPromptOverride, negativePromptOverride } = body;
 
 		// Build update object with only provided fields
 		const updateData: Record<string, any> = {};
@@ -56,6 +56,11 @@ export const PUT: RequestHandler = async ({ params, cookies, request }) => {
 		if (tags !== undefined) updateData.tags = JSON.stringify(tags);
 		if (description !== undefined) updateData.description = description;
 		if (cardData !== undefined) updateData.cardData = JSON.stringify(cardData);
+		// Image generation settings
+		if (imageTags !== undefined) updateData.imageTags = imageTags;
+		if (contextualTags !== undefined) updateData.contextualTags = contextualTags;
+		if (mainPromptOverride !== undefined) updateData.mainPromptOverride = mainPromptOverride;
+		if (negativePromptOverride !== undefined) updateData.negativePromptOverride = negativePromptOverride;
 
 		if (Object.keys(updateData).length === 0) {
 			return json({ error: 'No fields to update' }, { status: 400 });

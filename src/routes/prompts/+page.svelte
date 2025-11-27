@@ -46,23 +46,104 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 		},
 		decision: {
 			system: {
-				title: 'System Prompt',
-				description: 'Main prompt for the decision engine',
-				default: `You are a decision-making assistant. Analyze the context and make a decision about how to proceed.
+				title: 'Decision Engine Prompt',
+				description: 'Analyzes conversations to decide if the character should send an image',
+				default: `You are a decision engine that analyzes roleplay conversations to determine if the character should send an image.
 
-Respond with a JSON object containing your decision and reasoning.`
+Analyze the recent conversation and decide if this is an appropriate moment for the character to send an image/photo of themselves.
+
+Consider:
+- Did the user ask to see the character or request a photo?
+- Is there a natural moment where the character would share how they look?
+- Has it been a while since an image was sent and the conversation warrants one?
+- Would sending an image enhance the roleplay experience at this moment?
+
+Do NOT send an image if:
+- The conversation is purely dialogue/text focused
+- An image was just sent recently
+- The scene doesn't call for visual content
+
+Respond with key-value pairs, one per line:
+send_image: true/false
+reason: brief explanation for your decision`
 			}
 		},
 		content: {
-			system: {
-				title: 'System Prompt',
-				description: 'Main prompt for content generation',
-				default: `You are a creative content generator. Create engaging, well-written content based on the given parameters.
+			description: {
+				title: 'Description Rewriter',
+				description: 'Cleans up character descriptions from imported cards',
+				default: `Rewrite the following character description to be clean, well-formatted, and suitable for roleplay.
 
-Focus on:
-- Creativity and originality
-- Coherent narrative structure
-- Engaging writing style`
+Guidelines:
+- Remove any meta-instructions, placeholders, or formatting artifacts
+- Keep the core character traits, appearance, and background
+- Write in third person
+- Use clear, concise prose
+
+Original description:
+{{input}}
+
+Rewritten description:`
+			},
+			personality: {
+				title: 'Personality Rewriter',
+				description: 'Cleans up character personality traits',
+				default: `Rewrite the following character personality to be clean and well-structured.
+
+Guidelines:
+- Extract key personality traits
+- Remove redundant or contradictory information
+- Format as a clear, readable list or prose
+
+Original personality:
+{{input}}
+
+Rewritten personality:`
+			},
+			scenario: {
+				title: 'Scenario Rewriter',
+				description: 'Cleans up roleplay scenarios',
+				default: `Rewrite the following roleplay scenario to be clean and engaging.
+
+Guidelines:
+- Set up a clear starting situation
+- Establish the relationship between the character and user
+- Keep it open-ended enough for roleplay to develop
+
+Original scenario:
+{{input}}
+
+Rewritten scenario:`
+			},
+			message_example: {
+				title: 'Message Example Rewriter',
+				description: 'Cleans up example messages that show character voice',
+				default: `Rewrite the following example messages to demonstrate the character's voice and style.
+
+Guidelines:
+- Show how the character speaks and acts
+- Include a mix of dialogue and actions
+- Format actions with asterisks (*action*)
+
+Original examples:
+{{input}}
+
+Rewritten examples:`
+			},
+			greeting: {
+				title: 'Greeting Rewriter',
+				description: 'Cleans up character greeting/first messages',
+				default: `Rewrite the following greeting message to be clean and engaging.
+
+Guidelines:
+- Create an inviting opening for roleplay
+- Show the character's personality
+- Include both dialogue and scene-setting actions
+
+Original greeting:
+{{input}}
+
+Rewritten greeting:`
 			}
 		},
 		image: {
@@ -98,7 +179,9 @@ upper body, smiling, white shirt, black jacket, indoor, soft lighting, looking a
 			{ name: '{{scenario}}', description: 'Roleplay scenario' }
 		],
 		decision: [],
-		content: [],
+		content: [
+			{ name: '{{input}}', description: 'The original text to be rewritten' }
+		],
 		image: []
 	};
 

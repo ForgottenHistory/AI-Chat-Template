@@ -281,6 +281,7 @@
 							{error}
 							{success}
 							onImageChange={handleImageChange}
+							{onUpdate}
 						/>
 					{/if}
 				</div>

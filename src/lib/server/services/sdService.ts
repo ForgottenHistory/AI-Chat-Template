@@ -25,6 +25,9 @@ interface GenerateImageParams {
 	additionalPrompt?: string;
 	negativePrompt?: string;
 	settings?: Partial<SDSettings>;
+	// Character-specific overrides (take precedence over global settings)
+	mainPromptOverride?: string;
+	negativePromptOverride?: string;
 }
 
 interface GenerateImageResult {
@@ -88,17 +91,23 @@ class SDService {
 		contextTags = '',
 		additionalPrompt = '',
 		negativePrompt,
-		settings = {}
+		settings = {},
+		mainPromptOverride,
+		negativePromptOverride
 	}: GenerateImageParams): Promise<GenerateImageResult> {
 		const mergedSettings = { ...DEFAULT_SETTINGS, ...settings };
 
 		try {
+			// Use character-specific overrides if provided, otherwise use global settings
+			const basePrompt = mainPromptOverride?.trim() || mergedSettings.mainPrompt;
+			const baseNegative = negativePromptOverride?.trim() || mergedSettings.negativePrompt;
+
 			// Build full prompt
-			const fullPrompt = [mergedSettings.mainPrompt, characterTags, contextTags, additionalPrompt]
+			const fullPrompt = [basePrompt, characterTags, contextTags, additionalPrompt]
 				.filter(p => p && p.trim())
 				.join(', ');
 
-			const fullNegative = negativePrompt || mergedSettings.negativePrompt;
+			const fullNegative = negativePrompt || baseNegative;
 
 			console.log(`🎨 Generating image with SD...`);
 			console.log(`Prompt: ${fullPrompt}`);

@@ -14,20 +14,24 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const { conversationContext, characterTags, characterName } = await request.json();
+		const { conversationContext, characterName, imageTags, contextualTags } = await request.json();
 
 		if (!conversationContext) {
 			return json({ error: 'conversationContext is required' }, { status: 400 });
 		}
 
-		const tags = await imageTagGenerationService.generateTags({
+		const result = await imageTagGenerationService.generateTags({
 			userId: parseInt(userId),
 			conversationContext,
-			characterTags: characterTags || '',
-			characterName: characterName || ''
+			characterName: characterName || '',
+			imageTags: imageTags || '', // Always included tags (character appearance)
+			contextualTags: contextualTags || '' // AI chooses from these
 		});
 
-		return json({ tags });
+		return json({
+			generatedTags: result.generatedTags,
+			alwaysTags: result.alwaysTags
+		});
 	} catch (error: any) {
 		console.error('Failed to generate image tags:', error);
 		return json({ error: 'Failed to generate image tags' }, { status: 500 });

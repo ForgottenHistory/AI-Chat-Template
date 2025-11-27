@@ -39,6 +39,71 @@
 
 	let saving = $state(false);
 
+	// Rewrite states
+	let rewritingDescription = $state(false);
+	let rewritingScenario = $state(false);
+	let rewritingPersonality = $state(false);
+
+	async function rewriteField(field: 'description' | 'scenario' | 'personality') {
+		let input = '';
+		switch (field) {
+			case 'description':
+				input = editingDescription ? editedDescription : (character.description || data.description || '');
+				if (!input.trim()) return;
+				rewritingDescription = true;
+				break;
+			case 'scenario':
+				input = editingScenario ? editedScenario : (data.scenario || '');
+				if (!input.trim()) return;
+				rewritingScenario = true;
+				break;
+			case 'personality':
+				input = editingPersonality ? editedPersonality : (data.personality || '');
+				if (!input.trim()) return;
+				rewritingPersonality = true;
+				break;
+		}
+
+		try {
+			const response = await fetch('/api/content/rewrite', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ type: field, input })
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || 'Rewrite failed');
+			}
+
+			const { rewritten } = await response.json();
+
+			// Put rewritten content into edit mode
+			switch (field) {
+				case 'description':
+					editedDescription = rewritten;
+					editingDescription = true;
+					break;
+				case 'scenario':
+					editedScenario = rewritten;
+					editingScenario = true;
+					break;
+				case 'personality':
+					editedPersonality = rewritten;
+					editingPersonality = true;
+					personalityExpanded = true;
+					break;
+			}
+		} catch (err: any) {
+			console.error(`Failed to rewrite ${field}:`, err);
+			alert(`Failed to rewrite: ${err.message}`);
+		} finally {
+			rewritingDescription = false;
+			rewritingScenario = false;
+			rewritingPersonality = false;
+		}
+	}
+
 	function startEditing(field: string) {
 		switch (field) {
 			case 'description':
@@ -155,15 +220,31 @@
 		<div class="flex items-center justify-between mb-2 group">
 			<h4 class="text-sm font-medium text-[var(--text-secondary)]">Description</h4>
 			{#if !editingDescription}
-				<button
-					onclick={() => startEditing('description')}
-					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
-					aria-label="Edit description"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-					</svg>
-				</button>
+				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+					<button
+						onclick={() => rewriteField('description')}
+						disabled={rewritingDescription || !(character.description || data.description)}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+						title="Rewrite with AI"
+					>
+						{#if rewritingDescription}
+							<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+						{/if}
+					</button>
+					<button
+						onclick={() => startEditing('description')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						aria-label="Edit description"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+						</svg>
+					</button>
+				</div>
 			{/if}
 		</div>
 		{#if editingDescription}
@@ -181,6 +262,21 @@
 						class="px-3 py-1.5 bg-[var(--accent-primary)] text-white text-sm rounded-lg hover:opacity-90 transition disabled:opacity-50"
 					>
 						{saving ? 'Saving...' : 'Save'}
+					</button>
+					<button
+						onclick={() => rewriteField('description')}
+						disabled={rewritingDescription || !editedDescription.trim()}
+						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--accent-primary)] text-sm rounded-lg hover:bg-[var(--accent-primary)]/10 transition disabled:opacity-50 flex items-center gap-1.5"
+					>
+						{#if rewritingDescription}
+							<div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+							Rewriting...
+						{:else}
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+							Rewrite
+						{/if}
 					</button>
 					<button
 						onclick={() => cancelEditing('description')}
@@ -204,15 +300,31 @@
 		<div class="flex items-center justify-between mb-2 group">
 			<h4 class="text-sm font-medium text-[var(--text-secondary)]">Scenario</h4>
 			{#if !editingScenario}
-				<button
-					onclick={() => startEditing('scenario')}
-					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
-					aria-label="Edit scenario"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-					</svg>
-				</button>
+				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+					<button
+						onclick={() => rewriteField('scenario')}
+						disabled={rewritingScenario || !data.scenario}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+						title="Rewrite with AI"
+					>
+						{#if rewritingScenario}
+							<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+						{/if}
+					</button>
+					<button
+						onclick={() => startEditing('scenario')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						aria-label="Edit scenario"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+						</svg>
+					</button>
+				</div>
 			{/if}
 		</div>
 		{#if editingScenario}
@@ -230,6 +342,21 @@
 						class="px-3 py-1.5 bg-[var(--accent-primary)] text-white text-sm rounded-lg hover:opacity-90 transition disabled:opacity-50"
 					>
 						{saving ? 'Saving...' : 'Save'}
+					</button>
+					<button
+						onclick={() => rewriteField('scenario')}
+						disabled={rewritingScenario || !editedScenario.trim()}
+						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--accent-primary)] text-sm rounded-lg hover:bg-[var(--accent-primary)]/10 transition disabled:opacity-50 flex items-center gap-1.5"
+					>
+						{#if rewritingScenario}
+							<div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+							Rewriting...
+						{:else}
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+							Rewrite
+						{/if}
 					</button>
 					<button
 						onclick={() => cancelEditing('scenario')}
@@ -271,6 +398,21 @@
 						{saving ? 'Saving...' : 'Save'}
 					</button>
 					<button
+						onclick={() => rewriteField('personality')}
+						disabled={rewritingPersonality || !editedPersonality.trim()}
+						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--accent-primary)] text-sm rounded-lg hover:bg-[var(--accent-primary)]/10 transition disabled:opacity-50 flex items-center gap-1.5"
+					>
+						{#if rewritingPersonality}
+							<div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+							Rewriting...
+						{:else}
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+							Rewrite
+						{/if}
+					</button>
+					<button
 						onclick={() => cancelEditing('personality')}
 						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-sm rounded-lg hover:bg-[var(--border-primary)] transition"
 					>
@@ -283,15 +425,31 @@
 				<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed flex-1">
 					{data.personality || 'No personality defined'}
 				</div>
-				<button
-					onclick={() => startEditing('personality')}
-					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition flex-shrink-0"
-					aria-label="Edit personality"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-					</svg>
-				</button>
+				<div class="flex items-center gap-1 flex-shrink-0">
+					<button
+						onclick={() => rewriteField('personality')}
+						disabled={rewritingPersonality || !data.personality}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+						title="Rewrite with AI"
+					>
+						{#if rewritingPersonality}
+							<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+						{/if}
+					</button>
+					<button
+						onclick={() => startEditing('personality')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						aria-label="Edit personality"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+						</svg>
+					</button>
+				</div>
 			</div>
 		{/if}
 	</CollapsibleSection>

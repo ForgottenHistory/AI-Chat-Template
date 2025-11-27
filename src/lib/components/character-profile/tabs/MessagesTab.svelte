@@ -32,6 +32,85 @@
 	let addingGreeting = $state(false);
 	let deletingGreetingIndex = $state<number | null>(null);
 
+	// Rewrite states
+	let rewritingFirstMes = $state(false);
+	let rewritingMesExample = $state(false);
+	let rewritingGreetingIndex = $state<number | null>(null);
+
+	async function rewriteContent(type: 'greeting' | 'message_example', input: string, greetingIndex?: number) {
+		if (!input.trim()) return;
+
+		try {
+			const response = await fetch('/api/content/rewrite', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ type, input })
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || 'Rewrite failed');
+			}
+
+			const { rewritten } = await response.json();
+			return rewritten;
+		} catch (err: any) {
+			console.error(`Failed to rewrite:`, err);
+			alert(`Failed to rewrite: ${err.message}`);
+			return null;
+		}
+	}
+
+	async function rewriteFirstMes() {
+		const input = editingFirstMes ? editFirstMes : (data.first_mes || '');
+		if (!input.trim()) return;
+
+		rewritingFirstMes = true;
+		try {
+			const rewritten = await rewriteContent('greeting', input);
+			if (rewritten) {
+				editFirstMes = rewritten;
+				editingFirstMes = true;
+			}
+		} finally {
+			rewritingFirstMes = false;
+		}
+	}
+
+	async function rewriteMesExample() {
+		const input = editingMesExample ? editMesExample : (data.mes_example || '');
+		if (!input.trim()) return;
+
+		rewritingMesExample = true;
+		try {
+			const rewritten = await rewriteContent('message_example', input);
+			if (rewritten) {
+				editMesExample = rewritten;
+				editingMesExample = true;
+				mesExampleExpanded = true;
+			}
+		} finally {
+			rewritingMesExample = false;
+		}
+	}
+
+	async function rewriteGreeting(index: number) {
+		const input = editingGreetingIndex === index ? editGreeting : (data.alternate_greetings?.[index] || '');
+		if (!input.trim()) return;
+
+		rewritingGreetingIndex = index;
+		try {
+			const rewritten = await rewriteContent('greeting', input);
+			if (rewritten) {
+				editGreeting = rewritten;
+				editingGreetingIndex = index;
+				alternateGreetingsExpanded = true;
+			}
+		} finally {
+			rewritingGreetingIndex = null;
+		}
+	}
+
 	function startEditingFirstMes() {
 		editFirstMes = data.first_mes || '';
 		editingFirstMes = true;
@@ -147,15 +226,31 @@
 		<div class="flex items-center justify-between mb-2 group">
 			<h4 class="text-sm font-medium text-[var(--text-secondary)]">First Message</h4>
 			{#if !editingFirstMes}
-				<button
-					onclick={startEditingFirstMes}
-					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
-					aria-label="Edit first message"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-					</svg>
-				</button>
+				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+					<button
+						onclick={rewriteFirstMes}
+						disabled={rewritingFirstMes || !data.first_mes}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+						title="Rewrite with AI"
+					>
+						{#if rewritingFirstMes}
+							<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+						{/if}
+					</button>
+					<button
+						onclick={startEditingFirstMes}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						aria-label="Edit first message"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+						</svg>
+					</button>
+				</div>
 			{/if}
 		</div>
 		{#if editingFirstMes}
@@ -173,6 +268,21 @@
 						class="px-3 py-1.5 bg-[var(--accent-primary)] text-white text-sm rounded-lg hover:opacity-90 transition disabled:opacity-50"
 					>
 						{savingFirstMes ? 'Saving...' : 'Save'}
+					</button>
+					<button
+						onclick={rewriteFirstMes}
+						disabled={rewritingFirstMes || !editFirstMes.trim()}
+						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--accent-primary)] text-sm rounded-lg hover:bg-[var(--accent-primary)]/10 transition disabled:opacity-50 flex items-center gap-1.5"
+					>
+						{#if rewritingFirstMes}
+							<div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+							Rewriting...
+						{:else}
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+							Rewrite
+						{/if}
 					</button>
 					<button
 						onclick={() => cancelEdit('first_mes')}
@@ -217,6 +327,21 @@
 						{savingMesExample ? 'Saving...' : 'Save'}
 					</button>
 					<button
+						onclick={rewriteMesExample}
+						disabled={rewritingMesExample || !editMesExample.trim()}
+						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--accent-primary)] text-sm rounded-lg hover:bg-[var(--accent-primary)]/10 transition disabled:opacity-50 flex items-center gap-1.5"
+					>
+						{#if rewritingMesExample}
+							<div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+							Rewriting...
+						{:else}
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+							Rewrite
+						{/if}
+					</button>
+					<button
 						onclick={() => cancelEdit('mes_example')}
 						disabled={savingMesExample}
 						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-sm rounded-lg hover:bg-[var(--border-primary)] transition"
@@ -230,15 +355,31 @@
 				<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed font-mono text-sm flex-1">
 					{data.mes_example || 'No message example available'}
 				</div>
-				<button
-					onclick={startEditingMesExample}
-					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition flex-shrink-0"
-					aria-label="Edit message example"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-					</svg>
-				</button>
+				<div class="flex items-center gap-1 flex-shrink-0">
+					<button
+						onclick={rewriteMesExample}
+						disabled={rewritingMesExample || !data.mes_example}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+						title="Rewrite with AI"
+					>
+						{#if rewritingMesExample}
+							<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+							</svg>
+						{/if}
+					</button>
+					<button
+						onclick={startEditingMesExample}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						aria-label="Edit message example"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+						</svg>
+					</button>
+				</div>
 			</div>
 		{/if}
 	</CollapsibleSection>
@@ -258,6 +399,20 @@
 							<span class="text-xs font-medium text-[var(--text-muted)]">Greeting {index + 2}</span>
 							{#if editingGreetingIndex !== index}
 								<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+									<button
+										onclick={() => rewriteGreeting(index)}
+										disabled={rewritingGreetingIndex === index || !greeting}
+										class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed"
+										title="Rewrite with AI"
+									>
+										{#if rewritingGreetingIndex === index}
+											<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+										{:else}
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+											</svg>
+										{/if}
+									</button>
 									<button
 										onclick={() => startEditingGreeting(index)}
 										class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition"
@@ -299,6 +454,21 @@
 										class="px-3 py-1.5 bg-[var(--accent-primary)] text-white text-sm rounded-lg hover:opacity-90 transition disabled:opacity-50"
 									>
 										{savingGreeting ? 'Saving...' : 'Save'}
+									</button>
+									<button
+										onclick={() => rewriteGreeting(index)}
+										disabled={rewritingGreetingIndex === index || !editGreeting.trim()}
+										class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--accent-primary)] text-sm rounded-lg hover:bg-[var(--accent-primary)]/10 transition disabled:opacity-50 flex items-center gap-1.5"
+									>
+										{#if rewritingGreetingIndex === index}
+											<div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+											Rewriting...
+										{:else}
+											<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+											</svg>
+											Rewrite
+										{/if}
 									</button>
 									<button
 										onclick={() => cancelEdit('greeting')}

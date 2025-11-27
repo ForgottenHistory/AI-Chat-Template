@@ -68,18 +68,22 @@ class ImageTagGenerationService {
 
 	/**
 	 * Generate image tags using the Image LLM
+	 * @param imageTags - Always included tags (character appearance - hair, eyes, body)
+	 * @param contextualTags - Character-specific tags the AI can choose from
 	 */
 	async generateTags({
 		userId,
 		conversationContext,
-		characterTags = '',
-		characterName = ''
+		characterName = '',
+		imageTags = '',
+		contextualTags = ''
 	}: {
 		userId: number;
 		conversationContext: string;
-		characterTags?: string;
 		characterName?: string;
-	}): Promise<string> {
+		imageTags?: string;
+		contextualTags?: string;
+	}): Promise<{ generatedTags: string; alwaysTags: string }> {
 		try {
 			console.log('🎨 Generating image tags from conversation context...');
 
@@ -97,10 +101,10 @@ class ImageTagGenerationService {
 				this.loadTagLibrary(userId)
 			]);
 
-			// Build prompt
+			// Build prompt - contextualTags are what AI can choose from
 			const prompt = this.buildTagGenerationPrompt({
 				conversationContext,
-				characterTags,
+				characterTags: contextualTags, // AI chooses from these
 				characterName,
 				tagLibrary,
 				generatePrompt
@@ -116,11 +120,15 @@ class ImageTagGenerationService {
 
 			const generatedTags = response.trim();
 			console.log('🤖 LLM generated tags:', generatedTags);
+			console.log('🎨 Always included tags:', imageTags);
 
-			return generatedTags;
+			return {
+				generatedTags,
+				alwaysTags: imageTags // These are always included in the final prompt
+			};
 		} catch (error: any) {
 			console.error('❌ Failed to generate image tags:', error.message);
-			return '';
+			return { generatedTags: '', alwaysTags: imageTags };
 		}
 	}
 
