@@ -21,7 +21,13 @@ Scenario: {{scenario}}
 
 Write your next reply as {{char}} in this roleplay chat with {{user}}.`;
 
-const SYSTEM_PROMPT_FILE = path.join(process.cwd(), 'data', 'prompts', 'system.txt');
+const DEFAULT_IMPERSONATE_PROMPT = `Write the next message as {{user}} in this roleplay chat with {{char}}.
+
+Stay in character as {{user}}. Write a natural response that fits the conversation flow.`;
+
+const PROMPTS_DIR = path.join(process.cwd(), 'data', 'prompts');
+const SYSTEM_PROMPT_FILE = path.join(PROMPTS_DIR, 'system.txt');
+const IMPERSONATE_PROMPT_FILE = path.join(PROMPTS_DIR, 'impersonate.txt');
 
 /**
  * Load system prompt from file
@@ -32,6 +38,18 @@ async function loadSystemPromptFromFile(): Promise<string> {
 	} catch (error) {
 		// File doesn't exist, return default
 		return DEFAULT_SYSTEM_PROMPT;
+	}
+}
+
+/**
+ * Load impersonate prompt from file
+ */
+async function loadImpersonatePromptFromFile(): Promise<string> {
+	try {
+		return await fs.readFile(IMPERSONATE_PROMPT_FILE, 'utf-8');
+	} catch (error) {
+		// File doesn't exist, return default
+		return DEFAULT_IMPERSONATE_PROMPT;
 	}
 }
 
@@ -168,6 +186,109 @@ export async function generateChatCompletion(
 
 	// Log response for debugging (matching ID to prompt)
 	llmLogService.saveResponseLog(response.content, response.content, messageType, logId, response);
+
+	return response.content;
+}
+
+/**
+ * Generate an impersonation message (AI writes as the user)
+ * @param conversationHistory - Array of previous messages in the conversation
+ * @param character - Character card data
+ * @param settings - User's LLM settings
+ * @returns Generated user message content
+ */
+export async function generateImpersonation(
+	conversationHistory: Message[],
+	character: Character,
+	settings: LlmSettings
+): Promise<string> {
+	// Parse character card data
+	let characterData: any = {};
+	try {
+		characterData = JSON.parse(character.cardData);
+		// Handle both v1 and v2 character card formats
+		if (characterData.data) {
+			characterData = characterData.data;
+		}
+	} catch (error) {
+		console.error('Failed to parse character card data:', error);
+		throw new Error('Invalid character card data');
+	}
+
+	// Get user display name
+	const [user] = await db
+		.select()
+		.from(users)
+		.where(eq(users.id, settings.userId))
+		.limit(1);
+
+	const userName = user?.displayName || user?.username || 'User';
+
+	// Load impersonate prompt from file
+	const basePrompt = await loadImpersonatePromptFromFile();
+
+	// Prepare template variables
+	const templateVariables = {
+		char: character.name || 'Character',
+		user: userName,
+		personality: characterData.personality || '',
+		scenario: characterData.scenario || '',
+		description: characterData.description || ''
+	};
+
+	// Replace variables in template
+	const impersonatePrompt = replaceTemplateVariables(basePrompt, templateVariables);
+
+	// Format conversation history for LLM
+	const formattedMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+
+	// Add impersonate prompt as system message
+	formattedMessages.push({
+		role: 'system',
+		content: impersonatePrompt.trim()
+	});
+
+	// Add conversation history
+	for (const msg of conversationHistory) {
+		formattedMessages.push({
+			role: msg.role as 'user' | 'assistant',
+			content: msg.content
+		});
+	}
+
+	// Log prompt for debugging
+	const logId = llmLogService.savePromptLog(
+		formattedMessages,
+		'impersonate',
+		character.name || 'Character',
+		userName
+	);
+
+	logger.info(`Generating impersonation`, {
+		character: character.name,
+		user: userName,
+		model: settings.model,
+		messageCount: formattedMessages.length
+	});
+
+	// Call LLM service with user settings
+	const response = await llmService.createChatCompletion({
+		messages: formattedMessages,
+		userId: settings.userId,
+		model: settings.model,
+		temperature: settings.temperature,
+		maxTokens: settings.maxTokens
+	});
+
+	logger.success(`Generated impersonation`, {
+		character: character.name,
+		model: response.model,
+		contentLength: response.content.length,
+		tokensUsed: response.usage?.total_tokens
+	});
+
+	// Log response for debugging
+	llmLogService.saveResponseLog(response.content, response.content, 'impersonate', logId, response);
 
 	return response.content;
 }

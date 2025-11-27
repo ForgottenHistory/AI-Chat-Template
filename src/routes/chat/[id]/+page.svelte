@@ -25,9 +25,11 @@
 	let loading = $state(true);
 	let sending = $state(false);
 	let regenerating = $state(false);
+	let impersonating = $state(false);
 	let conversationId = $state<number | null>(null);
 	let isTyping = $state(false);
 	let chatMessages: ChatMessages;
+	let chatInput: ChatInput;
 	let previousCharacterId: number | null = null;
 
 	let hasAssistantMessages = $derived(messages.some(m => m.role === 'assistant'));
@@ -161,6 +163,28 @@
 			console.error('Failed to generate response:', error);
 		} finally {
 			sending = false;
+		}
+	}
+
+	async function impersonate() {
+		if (sending || impersonating) return;
+		impersonating = true;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/impersonate`, {
+				method: 'POST'
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				chatInput?.setInput(result.content);
+			} else {
+				alert('Failed to impersonate');
+			}
+		} catch (error) {
+			console.error('Failed to impersonate:', error);
+		} finally {
+			impersonating = false;
 		}
 	}
 
@@ -448,11 +472,14 @@
 		</div>
 
 		<ChatInput
+			bind:this={chatInput}
 			disabled={sending || regenerating}
 			{hasAssistantMessages}
+			{impersonating}
 			onSend={sendMessage}
 			onGenerate={generateResponse}
 			onRegenerate={regenerateLastMessage}
+			onImpersonate={impersonate}
 		/>
 	</div>
 </MainLayout>
