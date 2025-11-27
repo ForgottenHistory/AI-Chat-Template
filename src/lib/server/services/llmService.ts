@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { llmSettingsService } from './llmSettingsService';
 import { queueService } from './queueService';
-import { OPENROUTER_API_KEY, OPENROUTER_BASE_URL, FEATHERLESS_API_KEY } from '$env/static/private';
+import { OPENROUTER_API_KEY, FEATHERLESS_API_KEY } from '$env/static/private';
 
 interface Message {
 	role: 'system' | 'user' | 'assistant';
@@ -41,7 +41,7 @@ class LlmService {
 	constructor() {
 		this.openrouterApiKey = OPENROUTER_API_KEY || '';
 		this.featherlessApiKey = FEATHERLESS_API_KEY || '';
-		this.openrouterBaseUrl = OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+		this.openrouterBaseUrl = 'https://openrouter.ai/api/v1';
 		this.featherlessBaseUrl = 'https://api.featherless.ai/v1';
 
 		if (!this.openrouterApiKey) {
@@ -149,7 +149,7 @@ class LlmService {
 								Authorization: `Bearer ${providerConfig.apiKey}`,
 								'Content-Type': 'application/json',
 								'HTTP-Referer': 'https://localhost:5173',
-								'X-Title': 'Random-Encounter'
+								'X-Title': 'AI-Chat-Template'
 							},
 							timeout: 120000 // 120 second timeout
 						}

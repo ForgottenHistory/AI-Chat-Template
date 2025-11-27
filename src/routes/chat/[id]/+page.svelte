@@ -2,7 +2,9 @@
 	import type { PageData } from './$types';
 	import type { Character, Message } from '$lib/server/db/schema';
 	import MainLayout from '$lib/components/MainLayout.svelte';
-	import ChatMessage from '$lib/components/ChatMessage.svelte';
+	import ChatHeader from '$lib/components/chat/ChatHeader.svelte';
+	import ChatMessages from '$lib/components/chat/ChatMessages.svelte';
+	import ChatInput from '$lib/components/chat/ChatInput.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import {
 		initSocket,
@@ -17,48 +19,39 @@
 
 	let character = $state<Character | null>(null);
 	let messages = $state<Message[]>([]);
-	let input = $state('');
 	let loading = $state(true);
 	let sending = $state(false);
 	let conversationId = $state<number | null>(null);
-	let collapsed = $state(true);
-	let showMenu = $state(false);
-	let menuPosition = $state({ x: 0, y: 0 });
 	let isTyping = $state(false);
-	let messagesContainer: HTMLDivElement;
+	let chatMessages: ChatMessages;
 	let previousCharacterId: number | null = null;
 
+	let hasAssistantMessages = $derived(messages.some(m => m.role === 'assistant'));
+
 	onMount(() => {
-		// Initialize Socket.IO
 		initSocket();
 
-		// Setup Socket.IO listeners
 		onNewMessage((message: Message) => {
-			// Add message to messages array if not already present
 			if (!messages.find((m) => m.id === message.id)) {
 				messages = [...messages, message];
-				// Scroll to bottom after message is added
-				setTimeout(scrollToBottom, 100);
+				setTimeout(() => chatMessages?.scrollToBottom(), 100);
 			}
 		});
 
 		onTyping((typing: boolean) => {
 			isTyping = typing;
-			// Scroll to bottom when typing starts
 			if (typing) {
-				setTimeout(scrollToBottom, 100);
+				setTimeout(() => chatMessages?.scrollToBottom(), 100);
 			}
 		});
 
 		// Arrow key swipe navigation
 		const handleKeydown = (e: KeyboardEvent) => {
-			// Ignore if user is typing in an input field
 			const activeElement = document.activeElement;
 			if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
 				return;
 			}
 
-			// Get last assistant message
 			const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
 			if (!lastAssistantMessage) return;
 
@@ -78,11 +71,9 @@
 		};
 	});
 
-	// React to character ID changes (handles both initial load and navigation)
 	$effect(() => {
 		const currentCharacterId = data.characterId;
 		if (currentCharacterId !== previousCharacterId) {
-			// Leave previous conversation's socket room
 			if (conversationId) {
 				leaveConversation(conversationId);
 			}
@@ -93,7 +84,6 @@
 	});
 
 	onDestroy(() => {
-		// Clean up Socket.IO listeners
 		if (conversationId) {
 			leaveConversation(conversationId);
 		}
@@ -118,13 +108,11 @@
 			conversationId = result.conversationId;
 			messages = result.messages || [];
 
-			// Join Socket.IO room for this conversation
 			if (conversationId) {
 				joinConversation(conversationId);
 			}
 
-			// Scroll to bottom after messages load
-			setTimeout(scrollToBottom, 100);
+			setTimeout(() => chatMessages?.scrollToBottom(), 100);
 		} catch (error) {
 			console.error('Failed to load conversation:', error);
 		} finally {
@@ -132,17 +120,8 @@
 		}
 	}
 
-	function scrollToBottom() {
-		if (messagesContainer) {
-			messagesContainer.scrollTop = messagesContainer.scrollHeight;
-		}
-	}
-
-	async function sendMessage() {
-		if (!input.trim() || sending) return;
-
-		const userMessage = input.trim();
-		input = '';
+	async function sendMessage(userMessage: string) {
+		if (sending) return;
 		sending = true;
 
 		try {
@@ -154,21 +133,30 @@
 
 			if (!response.ok) {
 				alert('Failed to send message');
-				input = userMessage; // Restore input
 			}
-			// Note: Messages will be added via Socket.IO, no need to update here
 		} catch (error) {
 			console.error('Failed to send message:', error);
-			input = userMessage;
 		} finally {
 			sending = false;
 		}
 	}
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter' && !e.shiftKey) {
-			e.preventDefault();
-			sendMessage();
+	async function generateResponse() {
+		if (sending) return;
+		sending = true;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/generate`, {
+				method: 'POST'
+			});
+
+			if (!response.ok) {
+				alert('Failed to generate response');
+			}
+		} catch (error) {
+			console.error('Failed to generate response:', error);
+		} finally {
+			sending = false;
 		}
 	}
 
@@ -184,7 +172,6 @@
 			});
 
 			if (response.ok) {
-				// Reload the conversation to get the fresh first_mes
 				await loadConversation();
 			} else {
 				alert('Failed to reset conversation');
@@ -219,24 +206,19 @@
 		const isFirstMessage = messageIndex === 0;
 
 		if (direction === 'right') {
-			// Right swipe = go to next variant, or generate new if at the end
 			const nextIndex = currentIndex + 1;
 
 			if (nextIndex < swipes.length) {
-				// There's another swipe to show
 				await updateSwipeIndex(messageId, messageIndex, message, swipes, nextIndex);
 			} else if (!isFirstMessage) {
-				// At the end and not first message - generate new variant
 				await regenerateMessage(messageId);
 			} else {
-				// First message (greeting) - wrap around to beginning
 				await updateSwipeIndex(messageId, messageIndex, message, swipes, 0);
 			}
 		} else {
-			// Left swipe = go back one variant (wrap around)
 			let newIndex = currentIndex - 1;
 			if (newIndex < 0) {
-				newIndex = swipes.length - 1; // Wrap to end
+				newIndex = swipes.length - 1;
 			}
 			await updateSwipeIndex(messageId, messageIndex, message, swipes, newIndex);
 		}
@@ -251,14 +233,13 @@
 			});
 
 			if (response.ok) {
-				// Update the message locally instead of reloading everything
 				const updatedMessage = {
 					...message,
 					content: swipes[newIndex],
 					currentSwipe: newIndex
 				};
 				messages[messageIndex] = updatedMessage;
-				messages = [...messages]; // Trigger reactivity
+				messages = [...messages];
 			}
 		} catch (error) {
 			console.error('Failed to swipe message:', error);
@@ -283,7 +264,6 @@
 	}
 
 	async function regenerateLastMessage() {
-		// Find the last assistant message
 		const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
 		if (!lastAssistantMessage) return;
 
@@ -306,282 +286,53 @@
 		}
 	}
 
-	function isLastMessage(index: number): boolean {
-		return index === messages.length - 1;
+	async function deleteMessageAndBelow(messageId: number, messageIndex: number) {
+		const messagesBelow = messages.length - messageIndex;
+		const confirmed = confirm(`Delete this message and ${messagesBelow > 1 ? `${messagesBelow - 1} message(s) below it` : 'no messages below'}?`);
+		if (!confirmed) return;
+
+		try {
+			const response = await fetch(`/api/chat/messages/${messageId}/delete`, {
+				method: 'DELETE'
+			});
+
+			if (response.ok) {
+				messages = messages.slice(0, messageIndex);
+			} else {
+				alert('Failed to delete messages');
+			}
+		} catch (error) {
+			console.error('Failed to delete messages:', error);
+			alert('Failed to delete messages');
+		}
 	}
 </script>
 
-
 <MainLayout user={data.user} currentPath="/chat">
 	<div class="h-full flex flex-col bg-gray-50">
-		<!-- Chat Header with Banner -->
-		{#if character}
-			<div class="relative flex-shrink-0">
-				<!-- Banner Image -->
-				<div
-					class="relative overflow-hidden transition-all duration-300 {collapsed ? 'h-16' : 'h-52'}"
-				>
-					{#if character.imageData}
-						<img
-							src={character.imageData}
-							alt={character.name}
-							class="w-full h-full object-cover"
-						/>
-					{:else}
-						<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600"></div>
-					{/if}
-					<div
-						class="absolute inset-0 bg-gradient-to-b from-black/20 via-purple-900/30 to-black/70"
-					></div>
+		<ChatHeader
+			{character}
+			onReset={resetConversation}
+			onBack={() => window.location.href = '/library'}
+		/>
 
-					<!-- Top Right Buttons -->
-					<div class="absolute top-4 right-4 z-30 flex items-center gap-2">
-						<!-- Collapse/Expand Button -->
-						<button
-							onclick={() => (collapsed = !collapsed)}
-							class="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/30 hover:scale-110 transition-all shadow-lg border border-white/20"
-							title={collapsed ? 'Expand banner' : 'Collapse banner'}
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								{#if collapsed}
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2.5"
-										d="M19 9l-7 7-7-7"
-									/>
-								{:else}
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2.5"
-										d="M5 15l7-7 7 7"
-									/>
-								{/if}
-							</svg>
-						</button>
+		<ChatMessages
+			bind:this={chatMessages}
+			{messages}
+			{loading}
+			{isTyping}
+			charName={character?.name}
+			userName={data.user?.displayName}
+			onSwipe={swipeMessage}
+			onDelete={deleteMessageAndBelow}
+		/>
 
-						<!-- Menu Button -->
-						<button
-							onclick={(e) => {
-								if (!showMenu) {
-									const rect = e.currentTarget.getBoundingClientRect();
-									menuPosition = { x: rect.right - 180, y: rect.bottom + 8 };
-								}
-								showMenu = !showMenu;
-							}}
-							class="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/30 hover:scale-110 transition-all shadow-lg border border-white/20"
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2.5"
-									d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-								/>
-							</svg>
-						</button>
-					</div>
-
-					<!-- Character Info Overlay -->
-					{#if collapsed}
-						<!-- Compact mode -->
-						<div
-							class="absolute bottom-0 left-0 right-0 px-6 py-3 text-white flex items-center justify-between"
-						>
-							<div class="flex items-center gap-3">
-								<h2 class="text-lg font-bold drop-shadow-2xl">{character.name}</h2>
-							</div>
-						</div>
-					{:else}
-						<!-- Full mode -->
-						<div class="absolute bottom-0 left-0 right-0 p-6 text-white">
-							<div class="flex items-center gap-4">
-								<!-- Avatar -->
-								<div class="relative flex-shrink-0">
-									<div
-										class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl blur-lg opacity-60"
-									></div>
-									<div class="relative p-1 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl">
-										{#if character.imageData}
-											<img
-												src={character.imageData}
-												alt={character.name}
-												class="w-24 h-32 rounded-xl object-cover border-4 border-white shadow-2xl"
-											/>
-										{:else}
-											<div
-												class="w-24 h-32 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-2xl"
-											>
-												{character.name.charAt(0).toUpperCase()}
-											</div>
-										{/if}
-									</div>
-								</div>
-								<div class="flex-1">
-									<h2 class="text-2xl font-bold drop-shadow-2xl">{character.name}</h2>
-								</div>
-							</div>
-						</div>
-					{/if}
-				</div>
-			</div>
-		{/if}
-
-		<!-- Dropdown Menu (portal-style) -->
-		{#if showMenu}
-			<div class="fixed inset-0 z-[998]" onclick={() => (showMenu = false)}></div>
-			<div
-				class="fixed bg-white backdrop-blur-md border border-gray-200 rounded-xl shadow-xl py-1 min-w-[180px] z-[999]"
-				style="left: {menuPosition.x}px; top: {menuPosition.y}px;"
-			>
-				<button
-					onclick={() => {
-						showMenu = false;
-						resetConversation();
-					}}
-					class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-100 transition-all font-medium flex items-center gap-2"
-				>
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-						/>
-					</svg>
-					Reset Conversation
-				</button>
-				<button
-					onclick={() => {
-						showMenu = false;
-						window.location.href = '/library';
-					}}
-					class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-100 transition-all font-medium flex items-center gap-2"
-				>
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M15 19l-7-7 7-7"
-						/>
-					</svg>
-					Back to Library
-				</button>
-			</div>
-		{/if}
-
-		<!-- Messages Area -->
-		<div class="flex-1 overflow-y-auto px-6 py-6" bind:this={messagesContainer}>
-			{#if loading}
-				<div class="flex items-center justify-center h-full">
-					<div class="text-gray-500">Loading conversation...</div>
-				</div>
-			{:else if messages.length === 0}
-				<div class="flex items-center justify-center h-full">
-					<div class="text-center">
-						<p class="text-gray-600 mb-2">No messages yet</p>
-						<p class="text-sm text-gray-400">Start a conversation!</p>
-					</div>
-				</div>
-			{:else}
-				<div class="max-w-4xl mx-auto space-y-4">
-					{#each messages as message, index (message.id)}
-						<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-							<div class="flex flex-col gap-2 max-w-[70%]">
-									<div
-									class="rounded-2xl px-4 py-3 {message.role === 'user'
-										? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-										: 'bg-white border border-gray-200 text-gray-900'}"
-								>
-									<ChatMessage
-										content={message.content}
-										role={message.role}
-										charName={character?.name}
-										userName={data.user?.displayName}
-									/>
-								</div>
-
-								<!-- Swipe controls for assistant messages (only on last message) -->
-								{#if message.role === 'assistant' && isLastMessage(index)}
-									{@const swipes = getSwipes(message)}
-									{@const currentIndex = getCurrentSwipeIndex(message)}
-									<div class="flex items-center justify-center gap-2">
-										<button
-											onclick={() => swipeMessage(message.id, 'left')}
-											class="p-1.5 text-gray-400 hover:text-gray-600 transition"
-											title="Previous variant (wraps around)"
-										>
-											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-											</svg>
-										</button>
-										<span class="text-xs text-gray-500">{currentIndex + 1} / {swipes.length}</span>
-										<button
-											onclick={() => swipeMessage(message.id, 'right')}
-											class="p-1.5 text-gray-400 hover:text-gray-600 transition"
-											title="Generate new variant"
-										>
-											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-											</svg>
-										</button>
-									</div>
-								{/if}
-							</div>
-						</div>
-					{/each}
-				</div>
-
-				<!-- Typing Indicator -->
-				{#if isTyping}
-					<div class="flex justify-start px-6">
-						<div class="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-3">
-							<div class="flex gap-1">
-								<div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
-								<div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-								<div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
-							</div>
-						</div>
-					</div>
-				{/if}
-			{/if}
-		</div>
-
-		<!-- Input Area -->
-		<div class="bg-white border-t border-gray-200 px-6 py-4">
-			<div class="max-w-4xl mx-auto flex items-end gap-3">
-				<button
-					onclick={regenerateLastMessage}
-					disabled={messages.length === 0 || !messages.some(m => m.role === 'assistant')}
-					class="p-3 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition rounded-lg hover:bg-gray-100"
-					title="Regenerate last response"
-				>
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-					</svg>
-				</button>
-				<textarea
-					bind:value={input}
-					onkeydown={handleKeydown}
-					placeholder="Type a message..."
-					rows="1"
-					class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-					disabled={sending}
-				></textarea>
-				<button
-					onclick={sendMessage}
-					disabled={sending || !input.trim()}
-					class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
-				>
-					{#if sending}
-						Sending...
-					{:else}
-						Send
-					{/if}
-				</button>
-			</div>
-		</div>
+		<ChatInput
+			disabled={sending}
+			{hasAssistantMessages}
+			onSend={sendMessage}
+			onGenerate={generateResponse}
+			onRegenerate={regenerateLastMessage}
+		/>
 	</div>
 </MainLayout>
