@@ -34,6 +34,44 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 	}
 };
 
+// PUT - Update character details (name, tags)
+export const PUT: RequestHandler = async ({ params, cookies, request }) => {
+	const userId = cookies.get('userId');
+	if (!userId) {
+		return json({ error: 'Not authenticated' }, { status: 401 });
+	}
+
+	const characterId = parseInt(params.id);
+	if (isNaN(characterId)) {
+		return json({ error: 'Invalid character ID' }, { status: 400 });
+	}
+
+	try {
+		const body = await request.json();
+		const { name, tags } = body;
+
+		// Build update object with only provided fields
+		const updateData: Record<string, any> = {};
+		if (name !== undefined) updateData.name = name;
+		if (tags !== undefined) updateData.tags = JSON.stringify(tags);
+
+		if (Object.keys(updateData).length === 0) {
+			return json({ error: 'No fields to update' }, { status: 400 });
+		}
+
+		// Update only if it belongs to the user
+		await db
+			.update(characters)
+			.set(updateData)
+			.where(and(eq(characters.id, characterId), eq(characters.userId, parseInt(userId))));
+
+		return json({ success: true });
+	} catch (error) {
+		console.error('Failed to update character:', error);
+		return json({ error: 'Failed to update character' }, { status: 500 });
+	}
+};
+
 export const DELETE: RequestHandler = async ({ params, cookies }) => {
 	try {
 		const userId = cookies.get('userId');
