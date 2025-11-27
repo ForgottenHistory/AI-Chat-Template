@@ -5,17 +5,28 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let prompts = $state<Record<string, string>>({});
+	// Tab state
+	type PromptsTab = 'chat' | 'decision' | 'content' | 'image';
+	let activeTab = $state<PromptsTab>('chat');
+
+	let prompts = $state<Record<string, Record<string, string>>>({});
 	let loading = $state(true);
 	let saving = $state<string | null>(null);
 	let message = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 
-	const PROMPT_CONFIG = {
-		system: {
-			title: 'System Prompt',
-			description: 'The main prompt sent to the LLM for character responses',
-			file: 'system.txt',
-			default: `You are {{char}}.
+	const tabs = [
+		{ id: 'chat' as const, label: 'Chat', description: 'Prompts for character conversations' },
+		{ id: 'decision' as const, label: 'Decision', description: 'Prompts for decision-making before sending content' },
+		{ id: 'content' as const, label: 'Content', description: 'Prompts for content creation and generation' },
+		{ id: 'image' as const, label: 'Image', description: 'Prompts for image generation' }
+	];
+
+	const PROMPT_CONFIG: Record<string, Record<string, { title: string; description: string; default: string }>> = {
+		chat: {
+			system: {
+				title: 'System Prompt',
+				description: 'The main prompt sent to the LLM for character responses',
+				default: `You are {{char}}.
 
 {{description}}
 
@@ -24,24 +35,63 @@ Personality: {{personality}}
 Scenario: {{scenario}}
 
 Write your next reply as {{char}} in this roleplay chat with {{user}}.`
-		},
-		impersonate: {
-			title: 'Impersonate Prompt',
-			description: 'Used when generating a message as the user',
-			file: 'impersonate.txt',
-			default: `Write the next message as {{user}} in this roleplay chat with {{char}}.
+			},
+			impersonate: {
+				title: 'Impersonate Prompt',
+				description: 'Used when generating a message as the user',
+				default: `Write the next message as {{user}} in this roleplay chat with {{char}}.
 
 Stay in character as {{user}}. Write a natural response that fits the conversation flow.`
+			}
+		},
+		decision: {
+			system: {
+				title: 'System Prompt',
+				description: 'Main prompt for the decision engine',
+				default: `You are a decision-making assistant. Analyze the context and make a decision about how to proceed.
+
+Respond with a JSON object containing your decision and reasoning.`
+			}
+		},
+		content: {
+			system: {
+				title: 'System Prompt',
+				description: 'Main prompt for content generation',
+				default: `You are a creative content generator. Create engaging, well-written content based on the given parameters.
+
+Focus on:
+- Creativity and originality
+- Coherent narrative structure
+- Engaging writing style`
+			}
+		},
+		image: {
+			system: {
+				title: 'System Prompt',
+				description: 'Main prompt for image prompt generation',
+				default: `You are an image prompt generator. Create detailed, descriptive prompts for image generation.
+
+Focus on:
+- Visual details and composition
+- Art style and medium
+- Lighting and atmosphere
+- Color palette`
+			}
 		}
 	};
 
-	const VARIABLES = [
-		{ name: '{{char}}', description: 'Character name' },
-		{ name: '{{user}}', description: 'Your display name' },
-		{ name: '{{description}}', description: 'Character description' },
-		{ name: '{{personality}}', description: 'Character personality' },
-		{ name: '{{scenario}}', description: 'Roleplay scenario' }
-	];
+	const VARIABLES: Record<string, { name: string; description: string }[]> = {
+		chat: [
+			{ name: '{{char}}', description: 'Character name' },
+			{ name: '{{user}}', description: 'Your display name' },
+			{ name: '{{description}}', description: 'Character description' },
+			{ name: '{{personality}}', description: 'Character personality' },
+			{ name: '{{scenario}}', description: 'Roleplay scenario' }
+		],
+		decision: [],
+		content: [],
+		image: []
+	};
 
 	onMount(() => {
 		loadPrompts();
@@ -62,22 +112,23 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 		}
 	}
 
-	async function savePrompt(name: string) {
-		saving = name;
+	async function savePrompt(category: string, name: string) {
+		const key = `${category}_${name}`;
+		saving = key;
 		message = null;
 		try {
 			const response = await fetch('/api/prompts', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name, content: prompts[name] })
+				body: JSON.stringify({ category, name, content: prompts[category]?.[name] })
 			});
 
+			const data = await response.json();
+
 			if (response.ok) {
-				const config = PROMPT_CONFIG[name as keyof typeof PROMPT_CONFIG];
-				message = { type: 'success', text: `Saved to data/prompts/${config.file}` };
+				message = { type: 'success', text: `Saved to data/prompts/${data.file}` };
 				setTimeout(() => (message = null), 3000);
 			} else {
-				const data = await response.json();
 				message = { type: 'error', text: data.error || 'Failed to save prompt' };
 			}
 		} catch (error) {
@@ -87,15 +138,21 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 		}
 	}
 
-	function resetToDefault(name: string) {
-		const config = PROMPT_CONFIG[name as keyof typeof PROMPT_CONFIG];
+	function resetToDefault(category: string, name: string) {
+		const config = PROMPT_CONFIG[category]?.[name];
 		if (config) {
-			prompts[name] = config.default;
+			if (!prompts[category]) prompts[category] = {};
+			prompts[category][name] = config.default;
 		}
 	}
 
-	function insertVariable(name: string, variable: string) {
-		prompts[name] = (prompts[name] || '') + variable;
+	function getPromptValue(category: string, name: string): string {
+		return prompts[category]?.[name] || '';
+	}
+
+	function setPromptValue(category: string, name: string, value: string) {
+		if (!prompts[category]) prompts[category] = {};
+		prompts[category][name] = value;
 	}
 </script>
 
@@ -110,7 +167,7 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 			<div class="mb-6">
 				<h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">Prompts</h1>
 				<p class="text-[var(--text-secondary)]">
-					Customize the prompts used for character interactions
+					Customize the prompts used for each LLM type
 				</p>
 			</div>
 
@@ -125,10 +182,30 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 				</div>
 			{/if}
 
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+			<!-- Tabs -->
+			<div class="flex flex-wrap gap-2 mb-6">
+				{#each tabs as tab}
+					<button
+						onclick={() => (activeTab = tab.id)}
+						class="px-5 py-2.5 rounded-xl font-medium transition-all {activeTab === tab.id
+							? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white shadow-lg'
+							: 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-primary)]'}"
+					>
+						{tab.label}
+					</button>
+				{/each}
+			</div>
+
+			<!-- Tab Description -->
+			<p class="text-sm text-[var(--text-muted)] mb-6">
+				{tabs.find(t => t.id === activeTab)?.description}
+			</p>
+
+			<div class="grid grid-cols-1 {(VARIABLES[activeTab] || []).length > 0 ? 'lg:grid-cols-3' : ''} gap-6">
 				<!-- Stacked Prompt Editors -->
-				<div class="lg:col-span-2 space-y-6">
-					{#each Object.entries(PROMPT_CONFIG) as [name, config]}
+				<div class="{(VARIABLES[activeTab] || []).length > 0 ? 'lg:col-span-2' : ''} space-y-6">
+					{#each Object.entries(PROMPT_CONFIG[activeTab] || {}) as [name, config]}
+						{@const key = `${activeTab}_${name}`}
 						<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
 							<div class="p-6">
 								{#if loading}
@@ -144,7 +221,8 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 									</div>
 
 									<textarea
-										bind:value={prompts[name]}
+										value={getPromptValue(activeTab, name)}
+										oninput={(e) => setPromptValue(activeTab, name, e.currentTarget.value)}
 										rows="10"
 										placeholder={config.default}
 										class="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono text-sm resize-y"
@@ -152,11 +230,11 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 
 									<div class="flex items-center gap-3 mt-4">
 										<button
-											onclick={() => savePrompt(name)}
+											onclick={() => savePrompt(activeTab, name)}
 											disabled={saving !== null}
 											class="px-6 py-2.5 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white font-semibold rounded-xl hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2"
 										>
-											{#if saving === name}
+											{#if saving === key}
 												<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
 												Saving...
 											{:else}
@@ -164,7 +242,7 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 											{/if}
 										</button>
 										<button
-											onclick={() => resetToDefault(name)}
+											onclick={() => resetToDefault(activeTab, name)}
 											class="px-6 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] text-[var(--text-primary)] rounded-xl transition border border-[var(--border-primary)]"
 										>
 											Reset to Default
@@ -172,7 +250,7 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 									</div>
 
 									<p class="text-xs text-[var(--text-muted)] mt-3">
-										File: <code class="bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded">data/prompts/{config.file}</code>
+										File: <code class="bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded">data/prompts/{activeTab}_{name}.txt</code>
 									</p>
 								{/if}
 							</div>
@@ -180,29 +258,31 @@ Stay in character as {{user}}. Write a natural response that fits the conversati
 					{/each}
 				</div>
 
-				<!-- Variables Sidebar -->
-				<div class="lg:col-span-1">
-					<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden sticky top-8">
-						<div class="p-6">
-							<h3 class="text-lg font-semibold text-[var(--text-primary)] mb-4">Available Variables</h3>
-							<p class="text-sm text-[var(--text-secondary)] mb-4">
-								These variables are replaced with character data when generating responses.
-							</p>
-							<div class="space-y-2">
-								{#each VARIABLES as variable}
-									<div
-										class="p-3 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-primary)]"
-									>
-										<code class="text-[var(--accent-primary)] font-mono text-sm">
-											{variable.name}
-										</code>
-										<p class="text-xs text-[var(--text-muted)] mt-1">{variable.description}</p>
-									</div>
-								{/each}
+				<!-- Variables Sidebar (only shown when there are variables) -->
+				{#if (VARIABLES[activeTab] || []).length > 0}
+					<div class="lg:col-span-1">
+						<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden sticky top-8">
+							<div class="p-6">
+								<h3 class="text-lg font-semibold text-[var(--text-primary)] mb-4">Available Variables</h3>
+								<p class="text-sm text-[var(--text-secondary)] mb-4">
+									These variables are replaced with actual data when generating responses.
+								</p>
+								<div class="space-y-2">
+									{#each VARIABLES[activeTab] || [] as variable}
+										<div
+											class="p-3 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-primary)]"
+										>
+											<code class="text-[var(--accent-primary)] font-mono text-sm">
+												{variable.name}
+											</code>
+											<p class="text-xs text-[var(--text-muted)] mt-1">{variable.description}</p>
+										</div>
+									{/each}
+								</div>
 							</div>
 						</div>
 					</div>
-				</div>
+				{/if}
 			</div>
 		</div>
 	</div>

@@ -2,11 +2,19 @@
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import MainLayout from '$lib/components/MainLayout.svelte';
-	import ModelSelector from '$lib/components/ModelSelector.svelte';
+	import LLMSettingsForm from '$lib/components/settings/LLMSettingsForm.svelte';
+	import PresetsSection from '$lib/components/settings/PresetsSection.svelte';
+	import SavePresetDialog from '$lib/components/settings/SavePresetDialog.svelte';
+	import SettingsLoadingSkeleton from '$lib/components/settings/SettingsLoadingSkeleton.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	let settings = $state({
+	// Tab state
+	type SettingsTab = 'chat' | 'decision' | 'content' | 'image';
+	let activeTab = $state<SettingsTab>('chat');
+
+	// Default settings structure
+	const defaultLlmSettings = {
 		provider: 'openrouter',
 		model: 'anthropic/claude-3.5-sonnet',
 		temperature: 0.7,
@@ -15,6 +23,34 @@
 		frequencyPenalty: 0.0,
 		presencePenalty: 0.0,
 		contextWindow: 8000
+	};
+
+	// Chat LLM settings
+	let chatSettings = $state({ ...defaultLlmSettings });
+
+	// Decision Engine settings
+	let decisionSettings = $state({
+		...defaultLlmSettings,
+		temperature: 0.3,
+		maxTokens: 200,
+		contextWindow: 4000
+	});
+
+	// Content LLM settings
+	let contentSettings = $state({
+		...defaultLlmSettings,
+		temperature: 0.8,
+		maxTokens: 2000,
+		contextWindow: 16000
+	});
+
+	// Image LLM settings
+	let imageSettings = $state({
+		...defaultLlmSettings,
+		model: 'openai/dall-e-3',
+		temperature: 1.0,
+		maxTokens: 1000,
+		contextWindow: 4000
 	});
 
 	let loading = $state(true);
@@ -25,7 +61,6 @@
 	// Preset management
 	let presets = $state<any[]>([]);
 	let showSavePresetDialog = $state(false);
-	let presetName = $state('');
 	let savingPreset = $state(false);
 	let deletingPresetId = $state<number | null>(null);
 
@@ -37,10 +72,31 @@
 	async function loadSettings() {
 		loading = true;
 		try {
-			const response = await fetch('/api/llm/settings');
-			const data = await response.json();
-			if (data.settings) {
-				settings = data.settings;
+			const [chatRes, decisionRes, contentRes, imageRes] = await Promise.all([
+				fetch('/api/llm/settings'),
+				fetch('/api/llm/decision-settings'),
+				fetch('/api/llm/content-settings'),
+				fetch('/api/llm/image-settings')
+			]);
+
+			const chatData = await chatRes.json();
+			if (chatData.settings) {
+				chatSettings = chatData.settings;
+			}
+
+			const decisionData = await decisionRes.json();
+			if (decisionData.settings) {
+				decisionSettings = decisionData.settings;
+			}
+
+			const contentData = await contentRes.json();
+			if (contentData.settings) {
+				contentSettings = contentData.settings;
+			}
+
+			const imageData = await imageRes.json();
+			if (imageData.settings) {
+				imageSettings = imageData.settings;
 			}
 		} catch (error) {
 			console.error('Failed to load settings:', error);
@@ -49,11 +105,11 @@
 		}
 	}
 
-	async function saveSettings() {
+	async function saveSettings(endpoint: string, settings: any, successMessage: string) {
 		saving = true;
 		message = null;
 		try {
-			const response = await fetch('/api/llm/settings', {
+			const response = await fetch(endpoint, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(settings)
@@ -62,11 +118,8 @@
 			const data = await response.json();
 
 			if (response.ok) {
-				message = { type: 'success', text: 'Settings saved successfully!' };
-				// Scroll to top
-				if (containerRef) {
-					containerRef.scrollTo({ top: 0, behavior: 'smooth' });
-				}
+				message = { type: 'success', text: successMessage };
+				scrollToTop();
 				setTimeout(() => (message = null), 3000);
 			} else {
 				message = { type: 'error', text: data.error || 'Failed to save settings' };
@@ -75,6 +128,17 @@
 			message = { type: 'error', text: 'Network error. Please try again.' };
 		} finally {
 			saving = false;
+		}
+	}
+
+	const saveChatSettings = () => saveSettings('/api/llm/settings', chatSettings, 'Chat settings saved successfully!');
+	const saveDecisionSettings = () => saveSettings('/api/llm/decision-settings', decisionSettings, 'Decision engine settings saved successfully!');
+	const saveContentSettings = () => saveSettings('/api/llm/content-settings', contentSettings, 'Content LLM settings saved successfully!');
+	const saveImageSettings = () => saveSettings('/api/llm/image-settings', imageSettings, 'Image LLM settings saved successfully!');
+
+	function scrollToTop() {
+		if (containerRef) {
+			containerRef.scrollTo({ top: 0, behavior: 'smooth' });
 		}
 	}
 
@@ -88,27 +152,21 @@
 		}
 	}
 
-	async function savePreset() {
-		if (!presetName.trim()) {
-			message = { type: 'error', text: 'Please enter a preset name' };
-			return;
-		}
-
+	async function savePreset(name: string) {
 		savingPreset = true;
 		try {
 			const response = await fetch('/api/llm-presets', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					name: presetName,
-					...settings
+					name,
+					...chatSettings
 				})
 			});
 
 			if (response.ok) {
 				message = { type: 'success', text: 'Preset saved successfully!' };
 				showSavePresetDialog = false;
-				presetName = '';
 				await loadPresets();
 				setTimeout(() => (message = null), 3000);
 			} else {
@@ -123,7 +181,7 @@
 	}
 
 	function loadPresetSettings(preset: any) {
-		settings = {
+		chatSettings = {
 			provider: preset.provider,
 			model: preset.model,
 			temperature: preset.temperature,
@@ -135,9 +193,7 @@
 		};
 		message = { type: 'success', text: `Loaded preset: ${preset.name}` };
 		setTimeout(() => (message = null), 3000);
-		if (containerRef) {
-			containerRef.scrollTo({ top: 0, behavior: 'smooth' });
-		}
+		scrollToTop();
 	}
 
 	async function deletePreset(presetId: number) {
@@ -162,6 +218,13 @@
 			deletingPresetId = null;
 		}
 	}
+
+	const tabs = [
+		{ id: 'chat' as const, label: 'Chat', description: 'Configure the model for character conversations' },
+		{ id: 'decision' as const, label: 'Decision', description: 'Configure the model that makes decisions before sending content' },
+		{ id: 'content' as const, label: 'Content', description: 'Configure the model for content creation and generation' },
+		{ id: 'image' as const, label: 'Image', description: 'Configure the model for image generation' }
+	];
 </script>
 
 <svelte:head>
@@ -175,348 +238,117 @@
 			<div class="mb-6">
 				<h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">LLM Settings</h1>
 				<p class="text-[var(--text-secondary)]">
-					Configure your language model preferences for character interactions
+					Configure your language model preferences
 				</p>
 			</div>
 
-			<!-- Presets Section -->
-			{#if presets.length > 0}
-				<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] p-6 mb-6">
-					<label for="preset-selector" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-						Load Preset
-					</label>
-					<div class="flex items-center gap-3">
-						<select
-							id="preset-selector"
-							onchange={(e) => {
-								const presetId = parseInt(e.currentTarget.value);
-								if (presetId) {
-									const preset = presets.find((p) => p.id === presetId);
-									if (preset) loadPresetSettings(preset);
-								}
-							}}
-							class="flex-1 px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
-						>
-							<option value="">Select a preset...</option>
-							{#each presets as preset}
-								<option value={preset.id}>
-									{preset.name} ({preset.model})
-								</option>
-							{/each}
-						</select>
-						<button
-							onclick={() => {
-								const select = document.getElementById('preset-selector') as HTMLSelectElement;
-								const presetId = parseInt(select?.value || '');
-								if (presetId) {
-									deletePreset(presetId);
-									select.value = '';
-								}
-							}}
-							disabled={deletingPresetId !== null}
-							class="px-4 py-3 text-[var(--error)] hover:bg-[var(--error)]/10 disabled:opacity-50 rounded-xl transition border border-[var(--error)]/30 hover:border-[var(--error)]/50"
-							title="Delete selected preset"
-						>
-							{#if deletingPresetId !== null}
-								<div
-									class="w-5 h-5 border-2 border-[var(--error)] border-t-transparent rounded-full animate-spin"
-								></div>
-							{:else}
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-									/>
-								</svg>
-							{/if}
-						</button>
-					</div>
-					<p class="text-xs text-[var(--text-muted)] mt-2">
-						Select a preset to load its settings
-					</p>
+			<!-- Success/Error Message -->
+			{#if message}
+				<div
+					class="mb-6 p-4 rounded-xl border {message.type === 'success'
+						? 'bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]'
+						: 'bg-[var(--error)]/10 border-[var(--error)]/30 text-[var(--error)]'}"
+				>
+					{message.text}
 				</div>
 			{/if}
 
-			<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
-				{#if loading}
-					<!-- Loading State with Same Layout -->
-					<div class="p-6">
-						<div class="space-y-6">
-							<div>
-								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Provider</label>
-								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
-							</div>
-							<div>
-								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Model</label>
-								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
-							</div>
-							<div>
-								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Temperature: 0.7</label>
-								<div class="w-full h-2 bg-[var(--bg-tertiary)] rounded animate-pulse"></div>
-							</div>
-							<div>
-								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Max Tokens</label>
-								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
-							</div>
-							<div>
-								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Context Window</label>
-								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
-							</div>
-						</div>
-						<div class="mt-6 flex items-center gap-3">
-							<button
-								disabled
-								class="px-8 py-3 bg-gradient-to-r from-[var(--accent-primary)]/50 to-[var(--accent-secondary)]/50 text-white font-semibold rounded-xl shadow-lg cursor-not-allowed"
-							>
-								Save Settings
-							</button>
-							<button
-								disabled
-								class="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-muted)] rounded-xl font-semibold shadow-lg cursor-not-allowed"
-							>
-								Reload
-							</button>
-						</div>
-					</div>
-				{:else}
-					<form
-						class="p-6 space-y-6"
-						onsubmit={(e) => {
-							e.preventDefault();
-							saveSettings();
-						}}
+			<!-- Tabs -->
+			<div class="flex flex-wrap gap-2 mb-6">
+				{#each tabs as tab}
+					<button
+						onclick={() => (activeTab = tab.id)}
+						class="px-5 py-2.5 rounded-xl font-medium transition-all {activeTab === tab.id
+							? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white shadow-lg'
+							: 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-primary)]'}"
 					>
-						<!-- Success/Error Message -->
-						{#if message}
-							<div
-								class="mb-6 p-4 rounded-xl border {message.type === 'success'
-									? 'bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]'
-									: 'bg-[var(--error)]/10 border-[var(--error)]/30 text-[var(--error)]'}"
-							>
-								{message.text}
-							</div>
-						{/if}
-
-						<!-- Provider Selection -->
-						<div>
-							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Provider</label>
-							<select
-								bind:value={settings.provider}
-								class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
-							>
-								<option value="openrouter">OpenRouter</option>
-								<option value="featherless" disabled>Featherless (Coming Soon)</option>
-							</select>
-						</div>
-
-						<!-- Model Selection -->
-						<div>
-							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Model</label>
-							<ModelSelector
-								selectedModel={settings.model}
-								onSelect={(modelId) => (settings.model = modelId)}
-							/>
-						</div>
-
-						<!-- Temperature -->
-						<div>
-							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-								Temperature: {settings.temperature}
-							</label>
-							<input
-								type="range"
-								bind:value={settings.temperature}
-								min="0"
-								max="2"
-								step="0.1"
-								class="w-full accent-[var(--accent-primary)]"
-							/>
-							<p class="text-xs text-[var(--text-muted)] mt-1">
-								Higher values make output more random, lower values more deterministic
-							</p>
-						</div>
-
-						<!-- Max Tokens -->
-						<div>
-							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Max Tokens</label>
-							<input
-								type="number"
-								bind:value={settings.maxTokens}
-								min="50"
-								max="4000"
-								step="50"
-								class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
-							/>
-							<p class="text-xs text-[var(--text-muted)] mt-1">Maximum length of generated responses</p>
-						</div>
-
-						<!-- Context Window -->
-						<div>
-							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Context Window</label>
-							<input
-								type="number"
-								bind:value={settings.contextWindow}
-								min="1000"
-								max="200000"
-								step="1000"
-								class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
-							/>
-							<p class="text-xs text-[var(--text-muted)] mt-1">Total tokens available for context</p>
-						</div>
-
-						<!-- Advanced Settings -->
-						<details class="border border-[var(--border-primary)] rounded-xl">
-							<summary
-								class="px-4 py-3 cursor-pointer font-medium text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-xl"
-							>
-								Advanced Settings
-							</summary>
-							<div class="px-4 py-4 space-y-4 border-t border-[var(--border-primary)]">
-								<!-- Top P -->
-								<div>
-									<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-										Top P: {settings.topP}
-									</label>
-									<input
-										type="range"
-										bind:value={settings.topP}
-										min="0"
-										max="1"
-										step="0.05"
-										class="w-full accent-[var(--accent-primary)]"
-									/>
-									<p class="text-xs text-[var(--text-muted)] mt-1">Nucleus sampling threshold</p>
-								</div>
-
-								<!-- Frequency Penalty -->
-								<div>
-									<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-										Frequency Penalty: {settings.frequencyPenalty}
-									</label>
-									<input
-										type="range"
-										bind:value={settings.frequencyPenalty}
-										min="0"
-										max="2"
-										step="0.1"
-										class="w-full accent-[var(--accent-primary)]"
-									/>
-									<p class="text-xs text-[var(--text-muted)] mt-1">
-										Penalize repeated tokens based on frequency
-									</p>
-								</div>
-
-								<!-- Presence Penalty -->
-								<div>
-									<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-										Presence Penalty: {settings.presencePenalty}
-									</label>
-									<input
-										type="range"
-										bind:value={settings.presencePenalty}
-										min="0"
-										max="2"
-										step="0.1"
-										class="w-full accent-[var(--accent-primary)]"
-									/>
-									<p class="text-xs text-[var(--text-muted)] mt-1">Penalize tokens that appear at all</p>
-								</div>
-							</div>
-						</details>
-
-						<!-- Save Buttons -->
-						<div class="flex items-center gap-3">
-							<button
-								type="submit"
-								disabled={saving}
-								class="px-8 py-3 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white font-semibold rounded-xl hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center gap-2"
-							>
-								{#if saving}
-									<div
-										class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
-									></div>
-									Saving...
-								{:else}
-									Save Settings
-								{/if}
-							</button>
-							<button
-								type="button"
-								onclick={() => (showSavePresetDialog = true)}
-								class="px-8 py-3 bg-[var(--success)] hover:bg-[var(--success)]/80 text-white rounded-xl transition font-semibold shadow-lg hover:shadow-xl"
-							>
-								Save as Preset
-							</button>
-							<button
-								type="button"
-								onclick={loadSettings}
-								disabled={loading || saving}
-								class="px-8 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] disabled:opacity-50 text-[var(--text-primary)] rounded-xl transition font-semibold shadow-lg hover:shadow-xl border border-[var(--border-primary)]"
-							>
-								Reload
-							</button>
-						</div>
-					</form>
-				{/if}
+						{tab.label}
+					</button>
+				{/each}
 			</div>
+
+			<!-- Tab Description -->
+			<p class="text-sm text-[var(--text-muted)] mb-6">
+				{tabs.find(t => t.id === activeTab)?.description}
+			</p>
+
+			<!-- Chat Tab -->
+			{#if activeTab === 'chat'}
+				<PresetsSection
+					{presets}
+					onLoadPreset={loadPresetSettings}
+					onDeletePreset={deletePreset}
+					{deletingPresetId}
+				/>
+
+				<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
+					{#if loading}
+						<SettingsLoadingSkeleton />
+					{:else}
+						<LLMSettingsForm
+							bind:settings={chatSettings}
+							{saving}
+							onSave={saveChatSettings}
+							onSavePreset={() => (showSavePresetDialog = true)}
+							onReload={loadSettings}
+						/>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Decision Engine Tab -->
+			{#if activeTab === 'decision'}
+				<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
+					{#if loading}
+						<SettingsLoadingSkeleton />
+					{:else}
+						<LLMSettingsForm
+							bind:settings={decisionSettings}
+							{saving}
+							onSave={saveDecisionSettings}
+							onReload={loadSettings}
+						/>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Content LLM Tab -->
+			{#if activeTab === 'content'}
+				<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
+					{#if loading}
+						<SettingsLoadingSkeleton />
+					{:else}
+						<LLMSettingsForm
+							bind:settings={contentSettings}
+							{saving}
+							onSave={saveContentSettings}
+							onReload={loadSettings}
+						/>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Image LLM Tab -->
+			{#if activeTab === 'image'}
+				<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
+					{#if loading}
+						<SettingsLoadingSkeleton />
+					{:else}
+						<LLMSettingsForm
+							bind:settings={imageSettings}
+							{saving}
+							onSave={saveImageSettings}
+							onReload={loadSettings}
+						/>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 
-	<!-- Save Preset Dialog -->
-	{#if showSavePresetDialog}
-		<div
-			class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-			onclick={(e) => {
-				if (e.target === e.currentTarget) {
-					showSavePresetDialog = false;
-					presetName = '';
-				}
-			}}
-		>
-			<div class="bg-[var(--bg-secondary)] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[var(--border-primary)]">
-				<h3 class="text-xl font-bold text-[var(--text-primary)] mb-4">Save Preset</h3>
-				<p class="text-sm text-[var(--text-secondary)] mb-4">
-					Save your current settings as a reusable preset
-				</p>
-				<input
-					type="text"
-					bind:value={presetName}
-					placeholder="Preset name"
-					class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] mb-4"
-					onkeydown={(e) => {
-						if (e.key === 'Enter') {
-							e.preventDefault();
-							savePreset();
-						}
-					}}
-				/>
-				<div class="flex items-center gap-3 justify-end">
-					<button
-						onclick={() => {
-							showSavePresetDialog = false;
-							presetName = '';
-						}}
-						class="px-4 py-2 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] rounded-xl transition"
-					>
-						Cancel
-					</button>
-					<button
-						onclick={savePreset}
-						disabled={savingPreset || !presetName.trim()}
-						class="px-6 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] hover:opacity-90 disabled:opacity-50 text-white rounded-xl font-medium transition"
-					>
-						{#if savingPreset}
-							<div
-								class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"
-							></div>
-						{:else}
-							Save
-						{/if}
-					</button>
-				</div>
-			</div>
-		</div>
-	{/if}
+	<SavePresetDialog
+		bind:show={showSavePresetDialog}
+		saving={savingPreset}
+		onSave={savePreset}
+	/>
 </MainLayout>

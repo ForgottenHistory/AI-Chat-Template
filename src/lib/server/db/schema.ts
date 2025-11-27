@@ -27,6 +27,51 @@ export const llmSettings = sqliteTable('llm_settings', {
 	contextWindow: integer('context_window').notNull().default(8000)
 });
 
+export const decisionEngineSettings = sqliteTable('decision_engine_settings', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	provider: text('provider').notNull().default('openrouter'),
+	model: text('model').notNull().default('anthropic/claude-3.5-sonnet'),
+	temperature: real('temperature').notNull().default(0.3),
+	maxTokens: integer('max_tokens').notNull().default(200),
+	topP: real('top_p').notNull().default(1.0),
+	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
+	presencePenalty: real('presence_penalty').notNull().default(0.0),
+	contextWindow: integer('context_window').notNull().default(4000)
+});
+
+export const contentLlmSettings = sqliteTable('content_llm_settings', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	provider: text('provider').notNull().default('openrouter'),
+	model: text('model').notNull().default('anthropic/claude-3.5-sonnet'),
+	temperature: real('temperature').notNull().default(0.8),
+	maxTokens: integer('max_tokens').notNull().default(2000),
+	topP: real('top_p').notNull().default(1.0),
+	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
+	presencePenalty: real('presence_penalty').notNull().default(0.0),
+	contextWindow: integer('context_window').notNull().default(16000)
+});
+
+export const imageLlmSettings = sqliteTable('image_llm_settings', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	provider: text('provider').notNull().default('openrouter'),
+	model: text('model').notNull().default('openai/dall-e-3'),
+	temperature: real('temperature').notNull().default(1.0),
+	maxTokens: integer('max_tokens').notNull().default(1000),
+	topP: real('top_p').notNull().default(1.0),
+	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
+	presencePenalty: real('presence_penalty').notNull().default(0.0),
+	contextWindow: integer('context_window').notNull().default(4000)
+});
+
 export const llmPresets = sqliteTable('llm_presets', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	userId: integer('user_id')
@@ -105,6 +150,12 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type LlmSettings = typeof llmSettings.$inferSelect;
 export type NewLlmSettings = typeof llmSettings.$inferInsert;
+export type DecisionEngineSettings = typeof decisionEngineSettings.$inferSelect;
+export type NewDecisionEngineSettings = typeof decisionEngineSettings.$inferInsert;
+export type ContentLlmSettings = typeof contentLlmSettings.$inferSelect;
+export type NewContentLlmSettings = typeof contentLlmSettings.$inferInsert;
+export type ImageLlmSettings = typeof imageLlmSettings.$inferSelect;
+export type NewImageLlmSettings = typeof imageLlmSettings.$inferInsert;
 export type LlmPreset = typeof llmPresets.$inferSelect;
 export type NewLlmPreset = typeof llmPresets.$inferInsert;
 export type Character = typeof characters.$inferSelect;
