@@ -9,10 +9,11 @@
 		charName: string | undefined;
 		userName: string | undefined;
 		onSwipe: (messageId: number, direction: 'left' | 'right') => void;
+		onSaveEdit: (messageId: number, index: number, content: string) => void;
 		onDelete: (messageId: number, index: number) => void;
 	}
 
-	let { messages, loading, isTyping, charName, userName, onSwipe, onDelete }: Props = $props();
+	let { messages, loading, isTyping, charName, userName, onSwipe, onSaveEdit, onDelete }: Props = $props();
 
 	let container: HTMLDivElement | undefined = $state();
 
@@ -49,6 +50,7 @@
 					{charName}
 					{userName}
 					onSwipe={(direction) => onSwipe(message.id, direction)}
+					onSaveEdit={(content) => onSaveEdit(message.id, index, content)}
 					onDelete={() => onDelete(message.id, index)}
 				/>
 			{/each}

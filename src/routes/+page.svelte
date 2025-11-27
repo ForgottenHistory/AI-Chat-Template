@@ -5,6 +5,10 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
+<svelte:head>
+	<title>AI Chat</title>
+</svelte:head>
+
 <MainLayout user={data.user} currentPath="/">
 	<div class="h-full overflow-y-auto">
 		<div class="max-w-7xl mx-auto px-8 py-8">

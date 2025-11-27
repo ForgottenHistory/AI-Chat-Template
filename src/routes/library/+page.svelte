@@ -118,6 +118,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Library | AI Chat</title>
+</svelte:head>
+
 <MainLayout user={data.user} currentPath="/library">
 	<div class="h-full overflow-y-auto">
 		<div class="max-w-7xl mx-auto px-8 py-8">

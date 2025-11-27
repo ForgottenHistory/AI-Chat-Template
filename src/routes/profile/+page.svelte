@@ -96,6 +96,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Profile | AI Chat</title>
+</svelte:head>
+
 <MainLayout user={data.user} currentPath="/profile">
 	<div class="h-full overflow-y-auto bg-gray-50">
 		<div class="max-w-3xl mx-auto px-8 py-12 min-h-full">

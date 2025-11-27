@@ -306,7 +306,32 @@
 			alert('Failed to delete messages');
 		}
 	}
+
+	async function saveMessageEdit(messageId: number, messageIndex: number, content: string) {
+		try {
+			const response = await fetch(`/api/chat/messages/${messageId}/edit`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ content })
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				messages[messageIndex] = result.message;
+				messages = [...messages];
+			} else {
+				alert('Failed to save edit');
+			}
+		} catch (error) {
+			console.error('Failed to save edit:', error);
+			alert('Failed to save edit');
+		}
+	}
 </script>
+
+<svelte:head>
+	<title>{character?.name ?? 'Chat'} | AI Chat</title>
+</svelte:head>
 
 <MainLayout user={data.user} currentPath="/chat">
 	<div class="h-full flex flex-col bg-gray-50">
@@ -324,6 +349,7 @@
 			charName={character?.name}
 			userName={data.user?.displayName}
 			onSwipe={swipeMessage}
+			onSaveEdit={saveMessageEdit}
 			onDelete={deleteMessageAndBelow}
 		/>
 

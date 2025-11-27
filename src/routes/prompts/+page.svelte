@@ -202,6 +202,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Prompts | AI Chat</title>
+</svelte:head>
+
 <MainLayout user={data.user} currentPath="/prompts">
 	<div class="h-full overflow-y-auto" bind:this={containerRef}>
 		<div class="max-w-7xl mx-auto px-8 py-8">

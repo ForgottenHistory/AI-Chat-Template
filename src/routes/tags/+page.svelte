@@ -220,6 +220,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Tags | AI Chat</title>
+</svelte:head>
+
 <MainLayout user={data.user} currentPath="/tags">
 	<div bind:this={containerRef} class="h-full overflow-y-auto bg-gray-50">
 		<div class="max-w-5xl mx-auto px-8 py-12">
