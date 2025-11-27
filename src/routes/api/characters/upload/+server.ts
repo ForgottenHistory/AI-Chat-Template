@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { characters, promptTemplates } from '$lib/server/db/schema';
 import { characterImageParser } from '$lib/utils/characterImageParser';
+import sharp from 'sharp';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
@@ -45,8 +46,22 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 				// Convert image to base64
 				const arrayBuffer = await file.arrayBuffer();
-				const base64 = Buffer.from(arrayBuffer).toString('base64');
+				const imageBuffer = Buffer.from(arrayBuffer);
+				const base64 = imageBuffer.toString('base64');
 				const imageData = `data:image/png;base64,${base64}`;
+
+				// Generate thumbnail for sidebar (128px width, maintain aspect ratio)
+				let thumbnailData: string | null = null;
+				try {
+					const thumbnailBuffer = await sharp(imageBuffer)
+						.resize(128, 170, { fit: 'cover' })
+						.png({ quality: 80 })
+						.toBuffer();
+					thumbnailData = `data:image/png;base64,${thumbnailBuffer.toString('base64')}`;
+				} catch (thumbError) {
+					console.warn('Failed to generate thumbnail:', thumbError);
+					// Fall back to full image if thumbnail generation fails
+				}
 
 				// Store in database
 				const newChar = await db
@@ -57,6 +72,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 						description,
 						tags: JSON.stringify(tags),
 						imageData,
+						thumbnailData,
 						cardData: JSON.stringify(cardData)
 					})
 					.returning();

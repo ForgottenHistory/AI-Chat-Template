@@ -3,8 +3,6 @@
 	import type { Character, Message } from '$lib/server/db/schema';
 	import MainLayout from '$lib/components/MainLayout.svelte';
 	import { onMount, onDestroy } from 'svelte';
-	import { crossfade } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
 	import {
 		initSocket,
 		joinConversation,
@@ -13,24 +11,6 @@
 		onTyping,
 		removeAllListeners
 	} from '$lib/stores/socket';
-
-	const [send, receive] = crossfade({
-		duration: 300,
-		easing: cubicOut,
-		fallback(node, params) {
-			const style = getComputedStyle(node);
-			const transform = style.transform === 'none' ? '' : style.transform;
-
-			return {
-				duration: 300,
-				easing: cubicOut,
-				css: (t) => `
-					transform: ${transform} translateX(${(1 - t) * 200}px);
-					opacity: ${t}
-				`
-			};
-		}
-	});
 
 	let { data }: { data: PageData } = $props();
 
@@ -45,11 +25,9 @@
 	let menuPosition = $state({ x: 0, y: 0 });
 	let isTyping = $state(false);
 	let messagesContainer: HTMLDivElement;
+	let previousCharacterId: number | null = null;
 
 	onMount(() => {
-		loadCharacter();
-		loadConversation();
-
 		// Initialize Socket.IO
 		initSocket();
 
@@ -70,6 +48,47 @@
 				setTimeout(scrollToBottom, 100);
 			}
 		});
+
+		// Arrow key swipe navigation
+		const handleKeydown = (e: KeyboardEvent) => {
+			// Ignore if user is typing in an input field
+			const activeElement = document.activeElement;
+			if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
+				return;
+			}
+
+			// Get last assistant message
+			const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
+			if (!lastAssistantMessage) return;
+
+			if (e.key === 'ArrowLeft') {
+				e.preventDefault();
+				swipeMessage(lastAssistantMessage.id, 'left');
+			} else if (e.key === 'ArrowRight') {
+				e.preventDefault();
+				swipeMessage(lastAssistantMessage.id, 'right');
+			}
+		};
+
+		window.addEventListener('keydown', handleKeydown);
+
+		return () => {
+			window.removeEventListener('keydown', handleKeydown);
+		};
+	});
+
+	// React to character ID changes (handles both initial load and navigation)
+	$effect(() => {
+		const currentCharacterId = data.characterId;
+		if (currentCharacterId !== previousCharacterId) {
+			// Leave previous conversation's socket room
+			if (conversationId) {
+				leaveConversation(conversationId);
+			}
+			previousCharacterId = currentCharacterId;
+			loadCharacter();
+			loadConversation();
+		}
 	});
 
 	onDestroy(() => {
@@ -194,40 +213,54 @@
 		if (messageIndex === -1) return;
 
 		const message = messages[messageIndex];
+		const swipes = getSwipes(message);
+		const currentIndex = getCurrentSwipeIndex(message);
+		const isFirstMessage = messageIndex === 0;
 
 		if (direction === 'right') {
-			// Right swipe = generate new variant (adds to existing swipes)
-			await regenerateMessage(messageId);
+			// Right swipe = go to next variant, or generate new if at the end
+			const nextIndex = currentIndex + 1;
+
+			if (nextIndex < swipes.length) {
+				// There's another swipe to show
+				await updateSwipeIndex(messageId, messageIndex, message, swipes, nextIndex);
+			} else if (!isFirstMessage) {
+				// At the end and not first message - generate new variant
+				await regenerateMessage(messageId);
+			} else {
+				// First message (greeting) - wrap around to beginning
+				await updateSwipeIndex(messageId, messageIndex, message, swipes, 0);
+			}
 		} else {
 			// Left swipe = go back one variant (wrap around)
-			const swipes = getSwipes(message);
-			const currentIndex = getCurrentSwipeIndex(message);
-
 			let newIndex = currentIndex - 1;
 			if (newIndex < 0) {
 				newIndex = swipes.length - 1; // Wrap to end
 			}
+			await updateSwipeIndex(messageId, messageIndex, message, swipes, newIndex);
+		}
+	}
 
-			try {
-				const response = await fetch(`/api/chat/messages/${messageId}/swipe`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ swipeIndex: newIndex })
-				});
+	async function updateSwipeIndex(messageId: number, messageIndex: number, message: Message, swipes: string[], newIndex: number) {
+		try {
+			const response = await fetch(`/api/chat/messages/${messageId}/swipe`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ swipeIndex: newIndex })
+			});
 
-				if (response.ok) {
-					// Update the message locally instead of reloading everything
-					const updatedMessage = {
-						...message,
-						content: swipes[newIndex],
-						currentSwipe: newIndex
-					};
-					messages[messageIndex] = updatedMessage;
-					messages = [...messages]; // Trigger reactivity
-				}
-			} catch (error) {
-				console.error('Failed to swipe message:', error);
+			if (response.ok) {
+				// Update the message locally instead of reloading everything
+				const updatedMessage = {
+					...message,
+					content: swipes[newIndex],
+					currentSwipe: newIndex
+				};
+				messages[messageIndex] = updatedMessage;
+				messages = [...messages]; // Trigger reactivity
 			}
+		} catch (error) {
+			console.error('Failed to swipe message:', error);
 		}
 	}
 
@@ -456,17 +489,13 @@
 					{#each messages as message, index (message.id)}
 						<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
 							<div class="flex flex-col gap-2 max-w-[70%]">
-								{#key `${message.id}-${message.content}`}
 									<div
-										class="rounded-2xl px-4 py-3 {message.role === 'user'
-											? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-											: 'bg-white border border-gray-200 text-gray-900'}"
-										in:receive={{ key: `${message.id}-${message.content}` }}
-										out:send={{ key: `${message.id}-${message.content}` }}
-									>
-										<p class="whitespace-pre-wrap">{message.content}</p>
-									</div>
-								{/key}
+									class="rounded-2xl px-4 py-3 {message.role === 'user'
+										? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+										: 'bg-white border border-gray-200 text-gray-900'}"
+								>
+									<p class="whitespace-pre-wrap">{message.content}</p>
+								</div>
 
 								<!-- Swipe controls for assistant messages (only on last message) -->
 								{#if message.role === 'assistant' && isLastMessage(index)}

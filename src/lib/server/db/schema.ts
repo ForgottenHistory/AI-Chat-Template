@@ -54,7 +54,8 @@ export const characters = sqliteTable('characters', {
 	name: text('name').notNull(),
 	description: text('description'),
 	tags: text('tags'), // JSON array of tags
-	imageData: text('image_data'), // Base64 image data
+	imageData: text('image_data'), // Base64 image data (full size)
+	thumbnailData: text('thumbnail_data'), // Base64 thumbnail for sidebar
 	cardData: text('card_data').notNull(), // Full character card JSON
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()

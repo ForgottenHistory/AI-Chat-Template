@@ -81,6 +81,7 @@
 							: '')
 				);
 				loadCharacters();
+				window.dispatchEvent(new CustomEvent('characterUpdated'));
 			} else {
 				alert(result.error || 'Upload failed');
 			}
@@ -105,6 +106,7 @@
 
 			if (response.ok) {
 				loadCharacters();
+				window.dispatchEvent(new CustomEvent('characterUpdated'));
 			} else {
 				alert('Failed to delete character');
 			}

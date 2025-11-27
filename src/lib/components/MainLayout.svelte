@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { User, Character } from '$lib/server/db/schema';
 	import { onMount } from 'svelte';
+	import { getCharactersCache, setCharactersCache, isCharactersCacheLoaded } from '$lib/stores/characters';
 
 	interface Props {
 		user: User;
@@ -10,7 +11,7 @@
 	let { user, currentPath }: Props = $props();
 
 	let sidebarCollapsed = $state(false);
-	let characters = $state<Character[]>([]);
+	let characters = $state<Character[]>(getCharactersCache());
 
 	onMount(() => {
 		// Load sidebar collapsed state from localStorage
@@ -19,18 +20,10 @@
 			sidebarCollapsed = savedState === 'true';
 		}
 
-		// Try to load characters from sessionStorage first
-		const cachedCharacters = sessionStorage.getItem('characters');
-		if (cachedCharacters) {
-			try {
-				characters = JSON.parse(cachedCharacters);
-			} catch (e) {
-				console.error('Failed to parse cached characters:', e);
-			}
+		// Only fetch if not already loaded, otherwise use cache
+		if (!isCharactersCacheLoaded()) {
+			loadCharacters();
 		}
-
-		// Load fresh data in background
-		loadCharacters();
 
 		// Listen for character updates from other components
 		const handleCharacterUpdate = () => {
@@ -53,8 +46,7 @@
 			const response = await fetch('/api/characters');
 			const result = await response.json();
 			characters = result.characters || [];
-			// Cache in sessionStorage for instant loads
-			sessionStorage.setItem('characters', JSON.stringify(characters));
+			setCharactersCache(characters);
 		} catch (error) {
 			console.error('Failed to load characters:', error);
 		}
@@ -127,9 +119,9 @@
 										class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"
 									></div>
 									<div class="relative bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl p-0.5">
-										{#if character.imageData}
+										{#if character.thumbnailData || character.imageData}
 											<img
-												src={character.imageData}
+												src={character.thumbnailData || character.imageData}
 												alt={character.name}
 												class="w-16 h-20 rounded-lg object-cover"
 											/>
