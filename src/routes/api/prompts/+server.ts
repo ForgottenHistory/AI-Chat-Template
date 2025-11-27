@@ -1,9 +1,31 @@
-import { json, type RequestHandler } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { promptTemplates } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import fs from 'fs/promises';
+import path from 'path';
 
-// GET - Fetch all prompt templates for user
+const PROMPTS_DIR = path.join(process.cwd(), 'data', 'prompts');
+const SYSTEM_PROMPT_FILE = path.join(PROMPTS_DIR, 'system.txt');
+
+const DEFAULT_SYSTEM_PROMPT = `You are {{char}}.
+
+{{description}}
+
+Personality: {{personality}}
+
+Scenario: {{scenario}}
+
+Write your next reply as {{char}} in this roleplay chat with {{user}}.`;
+
+// Ensure prompts directory exists
+async function ensurePromptsDir() {
+	try {
+		await fs.mkdir(PROMPTS_DIR, { recursive: true });
+	} catch (error) {
+		// Directory already exists
+	}
+}
+
+// GET - Read system prompt from file
 export const GET: RequestHandler = async ({ cookies }) => {
 	const userId = cookies.get('userId');
 	if (!userId) {
@@ -11,46 +33,39 @@ export const GET: RequestHandler = async ({ cookies }) => {
 	}
 
 	try {
-		const templates = await db
-			.select()
-			.from(promptTemplates)
-			.where(eq(promptTemplates.userId, parseInt(userId)))
-			.orderBy(promptTemplates.createdAt);
+		await ensurePromptsDir();
 
-		return json({ templates });
+		let systemPrompt = DEFAULT_SYSTEM_PROMPT;
+		try {
+			systemPrompt = await fs.readFile(SYSTEM_PROMPT_FILE, 'utf-8');
+		} catch (error) {
+			// File doesn't exist, use default
+			await fs.writeFile(SYSTEM_PROMPT_FILE, DEFAULT_SYSTEM_PROMPT, 'utf-8');
+		}
+
+		return json({ systemPrompt });
 	} catch (error) {
-		console.error('Failed to fetch prompt templates:', error);
-		return json({ error: 'Failed to fetch templates' }, { status: 500 });
+		console.error('Failed to read system prompt:', error);
+		return json({ error: 'Failed to read system prompt' }, { status: 500 });
 	}
 };
 
-// POST - Create new prompt template
-export const POST: RequestHandler = async ({ request, cookies }) => {
+// PUT - Write system prompt to file
+export const PUT: RequestHandler = async ({ request, cookies }) => {
 	const userId = cookies.get('userId');
 	if (!userId) {
 		return json({ error: 'Not authenticated' }, { status: 401 });
 	}
 
 	try {
-		const { name, description, content } = await request.json();
+		const { systemPrompt } = await request.json();
 
-		if (!name || !content) {
-			return json({ error: 'Name and content are required' }, { status: 400 });
-		}
+		await ensurePromptsDir();
+		await fs.writeFile(SYSTEM_PROMPT_FILE, systemPrompt || DEFAULT_SYSTEM_PROMPT, 'utf-8');
 
-		const [template] = await db
-			.insert(promptTemplates)
-			.values({
-				userId: parseInt(userId),
-				name,
-				description: description || null,
-				content
-			})
-			.returning();
-
-		return json({ template }, { status: 201 });
+		return json({ success: true });
 	} catch (error) {
-		console.error('Failed to create prompt template:', error);
-		return json({ error: 'Failed to create template' }, { status: 500 });
+		console.error('Failed to save system prompt:', error);
+		return json({ error: 'Failed to save system prompt' }, { status: 500 });
 	}
 };

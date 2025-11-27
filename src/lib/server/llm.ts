@@ -2,15 +2,16 @@ import { llmService } from './services/llmService';
 import { llmLogService } from './services/llmLogService';
 import { logger } from './utils/logger';
 import { db } from './db';
-import { promptTemplates, users } from './db/schema';
+import { users } from './db/schema';
 import { eq } from 'drizzle-orm';
 import type { Message, Character, LlmSettings } from './db/schema';
+import fs from 'fs/promises';
+import path from 'path';
 
 /**
- * Default prompt template used when user hasn't created a custom one
- * Available variables: {{char}}, {{user}}, {{personality}}, {{scenario}}, {{description}}, {{message}}
+ * Default system prompt used when file doesn't exist
  */
-const DEFAULT_PROMPT_TEMPLATE = `You are {{char}}.
+const DEFAULT_SYSTEM_PROMPT = `You are {{char}}.
 
 {{description}}
 
@@ -20,9 +21,22 @@ Scenario: {{scenario}}
 
 Write your next reply as {{char}} in this roleplay chat with {{user}}.`;
 
+const SYSTEM_PROMPT_FILE = path.join(process.cwd(), 'data', 'prompts', 'system.txt');
+
+/**
+ * Load system prompt from file
+ */
+async function loadSystemPromptFromFile(): Promise<string> {
+	try {
+		return await fs.readFile(SYSTEM_PROMPT_FILE, 'utf-8');
+	} catch (error) {
+		// File doesn't exist, return default
+		return DEFAULT_SYSTEM_PROMPT;
+	}
+}
+
 /**
  * Replace template variables with actual values
- * Available variables: {{char}}, {{user}}, {{personality}}, {{scenario}}, {{description}}, {{message}}
  */
 function replaceTemplateVariables(
 	template: string,
@@ -32,7 +46,6 @@ function replaceTemplateVariables(
 		personality: string;
 		scenario: string;
 		description: string;
-		message: string;
 	}
 ): string {
 	return template
@@ -40,8 +53,7 @@ function replaceTemplateVariables(
 		.replace(/\{\{user\}\}/g, variables.user)
 		.replace(/\{\{personality\}\}/g, variables.personality)
 		.replace(/\{\{scenario\}\}/g, variables.scenario)
-		.replace(/\{\{description\}\}/g, variables.description)
-		.replace(/\{\{message\}\}/g, variables.message);
+		.replace(/\{\{description\}\}/g, variables.description);
 }
 
 /**
@@ -49,7 +61,6 @@ function replaceTemplateVariables(
  * @param conversationHistory - Array of previous messages in the conversation
  * @param character - Character card data
  * @param settings - User's LLM settings
- * @param promptTemplateId - Optional custom prompt template ID to use
  * @param messageType - Type of message for logging ('chat', 'regenerate', 'swipe')
  * @returns Generated assistant message content
  */
@@ -57,7 +68,6 @@ export async function generateChatCompletion(
 	conversationHistory: Message[],
 	character: Character,
 	settings: LlmSettings,
-	promptTemplateId?: number,
 	messageType: string = 'chat'
 ): Promise<string> {
 	// Parse character card data
@@ -73,7 +83,7 @@ export async function generateChatCompletion(
 		throw new Error('Invalid character card data');
 	}
 
-	// Get user display name for {{user}} variable
+	// Get user display name
 	const [user] = await db
 		.select()
 		.from(users)
@@ -82,10 +92,8 @@ export async function generateChatCompletion(
 
 	const userName = user?.displayName || user?.username || 'User';
 
-	// Get the last user message for {{message}} variable
-	const lastUserMessage = [...conversationHistory]
-		.reverse()
-		.find((m) => m.role === 'user')?.content || '';
+	// Load system prompt from file
+	const basePrompt = await loadSystemPromptFromFile();
 
 	// Prepare template variables
 	const templateVariables = {
@@ -93,27 +101,11 @@ export async function generateChatCompletion(
 		user: userName,
 		personality: characterData.personality || '',
 		scenario: characterData.scenario || '',
-		description: characterData.description || '',
-		message: lastUserMessage
+		description: characterData.description || ''
 	};
 
-	// Get prompt template (custom or default)
-	let promptTemplate = DEFAULT_PROMPT_TEMPLATE;
-
-	if (promptTemplateId) {
-		const [template] = await db
-			.select()
-			.from(promptTemplates)
-			.where(eq(promptTemplates.id, promptTemplateId))
-			.limit(1);
-
-		if (template) {
-			promptTemplate = template.content;
-		}
-	}
-
 	// Replace variables in template
-	const systemPrompt = replaceTemplateVariables(promptTemplate, templateVariables);
+	const systemPrompt = replaceTemplateVariables(basePrompt, templateVariables);
 
 	// Add example dialogues if present (after template)
 	let finalSystemPrompt = systemPrompt;

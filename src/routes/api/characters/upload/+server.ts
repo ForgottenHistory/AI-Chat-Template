@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { characters, promptTemplates } from '$lib/server/db/schema';
+import { characters } from '$lib/server/db/schema';
 import { characterImageParser } from '$lib/utils/characterImageParser';
 import sharp from 'sharp';
 
@@ -15,7 +15,6 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 		const formData = await request.formData();
 		const files = formData.getAll('files') as File[];
-		const importSystemPrompts = formData.get('importSystemPrompts') === 'true';
 
 		if (!files || files.length === 0) {
 			return json({ error: 'No files provided' }, { status: 400 });
@@ -81,21 +80,6 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 					filename: file.name,
 					character: newChar[0]
 				});
-
-				// Create prompt template from system_prompt if checkbox is enabled
-				if (importSystemPrompts && cardData.data?.system_prompt) {
-					try {
-						await db.insert(promptTemplates).values({
-							userId: parseInt(userId),
-							name: `${name} - System Prompt`,
-							description: `System prompt from ${name} character card`,
-							content: cardData.data.system_prompt
-						});
-					} catch (templateError) {
-						console.warn('Failed to create prompt template:', templateError);
-						// Don't fail the entire import if template creation fails
-					}
-				}
 			} catch (error: any) {
 				console.error(`Failed to process ${file.name}:`, error);
 				results.failed.push({

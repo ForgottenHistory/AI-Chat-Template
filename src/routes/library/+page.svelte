@@ -9,42 +9,28 @@
 
 	let characters = $state([]);
 	let loading = $state(true);
-	let stats = $state({ total: 0, templates: 0, presets: 0 });
+	let stats = $state({ total: 0, presets: 0 });
 	let selectedCharacter = $state<Character | null>(null);
 	let hoveredCharacterId = $state<number | null>(null);
 	let deletingCharacterId = $state<number | null>(null);
-	let importSystemPrompts = $state(true);
 
 	onMount(() => {
-		// Load saved preference
-		const saved = localStorage.getItem('importSystemPrompts');
-		if (saved !== null) {
-			importSystemPrompts = saved === 'true';
-		}
 		loadCharacters();
-	});
-
-	// Save preference when it changes
-	$effect(() => {
-		localStorage.setItem('importSystemPrompts', importSystemPrompts.toString());
 	});
 
 	async function loadCharacters() {
 		loading = true;
 		try {
-			const [charactersRes, templatesRes, presetsRes] = await Promise.all([
+			const [charactersRes, presetsRes] = await Promise.all([
 				fetch('/api/characters'),
-				fetch('/api/prompts'),
 				fetch('/api/llm-presets')
 			]);
 
 			const charactersData = await charactersRes.json();
-			const templatesData = await templatesRes.json();
 			const presetsData = await presetsRes.json();
 
 			characters = charactersData.characters || [];
 			stats.total = characters.length;
-			stats.templates = templatesData.templates?.length || 0;
 			stats.presets = presetsData.presets?.length || 0;
 		} catch (error) {
 			console.error('Failed to load characters:', error);
@@ -63,7 +49,6 @@
 		for (let i = 0; i < files.length; i++) {
 			formData.append('files', files[i]);
 		}
-		formData.append('importSystemPrompts', importSystemPrompts.toString());
 
 		try {
 			const response = await fetch('/api/characters/upload', {
@@ -126,14 +111,10 @@
 	<div class="h-full overflow-y-auto bg-[var(--bg-primary)]">
 		<div class="max-w-7xl mx-auto px-8 py-8">
 			<!-- Stats -->
-			<div class="grid grid-cols-3 gap-4 mb-8">
+			<div class="grid grid-cols-2 gap-4 mb-8">
 				<div class="bg-[var(--bg-secondary)] rounded-xl p-6 shadow-md border border-[var(--border-primary)]">
 					<div class="text-3xl font-bold text-[var(--accent-primary)] mb-1">{stats.total}</div>
 					<div class="text-[var(--text-secondary)]">Total Characters</div>
-				</div>
-				<div class="bg-[var(--bg-secondary)] rounded-xl p-6 shadow-md border border-[var(--border-primary)]">
-					<div class="text-3xl font-bold text-[var(--success)] mb-1">{stats.templates}</div>
-					<div class="text-[var(--text-secondary)]">Prompt Templates</div>
 				</div>
 				<div class="bg-[var(--bg-secondary)] rounded-xl p-6 shadow-md border border-[var(--border-primary)]">
 					<div class="text-3xl font-bold text-[var(--accent-secondary)] mb-1">{stats.presets}</div>
@@ -177,32 +158,6 @@
 							onchange={handleUpload}
 						/>
 					</label>
-
-					<!-- Import Options -->
-					<div class="mt-4 pt-4 border-t border-[var(--border-primary)]">
-						<label class="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
-							<input
-								type="checkbox"
-								bind:checked={importSystemPrompts}
-								class="w-4 h-4 text-[var(--accent-primary)] bg-[var(--bg-tertiary)] border-[var(--border-secondary)] rounded focus:ring-[var(--accent-primary)]"
-							/>
-							<span>Import system prompts as templates</span>
-							<svg
-								class="w-4 h-4 text-[var(--text-muted)]"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								title="If checked, any system_prompt fields in character cards will be automatically added to your Prompt Templates"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-								/>
-							</svg>
-						</label>
-					</div>
 				</div>
 			</div>
 

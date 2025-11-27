@@ -74,22 +74,6 @@ export const tagLibrary = sqliteTable('tag_library', {
 		.$defaultFn(() => new Date())
 });
 
-export const promptTemplates = sqliteTable('prompt_templates', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	userId: integer('user_id')
-		.notNull()
-		.references(() => users.id, { onDelete: 'cascade' }),
-	name: text('name').notNull(),
-	description: text('description'),
-	content: text('content').notNull(),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date()),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.$defaultFn(() => new Date())
-});
-
 export const conversations = sqliteTable('conversations', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	userId: integer('user_id')
@@ -127,8 +111,6 @@ export type Character = typeof characters.$inferSelect;
 export type NewCharacter = typeof characters.$inferInsert;
 export type TagLibrary = typeof tagLibrary.$inferSelect;
 export type NewTagLibrary = typeof tagLibrary.$inferInsert;
-export type PromptTemplate = typeof promptTemplates.$inferSelect;
-export type NewPromptTemplate = typeof promptTemplates.$inferInsert;
 export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
 export type Message = typeof messages.$inferSelect;
