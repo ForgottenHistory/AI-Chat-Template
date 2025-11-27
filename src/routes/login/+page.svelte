@@ -44,7 +44,7 @@
 	<div class="max-w-md w-full space-y-8">
 		<div>
 			<h2 class="text-center text-3xl font-bold text-gray-900">
-				Random Encounter
+				AI Chat Template
 			</h2>
 			<p class="mt-2 text-center text-sm text-gray-600">
 				Sign in to your account
