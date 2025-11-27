@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import type { Character, Message } from '$lib/server/db/schema';
 	import MainLayout from '$lib/components/MainLayout.svelte';
+	import ChatMessage from '$lib/components/ChatMessage.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import {
 		initSocket,
@@ -494,7 +495,12 @@
 										? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
 										: 'bg-white border border-gray-200 text-gray-900'}"
 								>
-									<p class="whitespace-pre-wrap">{message.content}</p>
+									<ChatMessage
+										content={message.content}
+										role={message.role}
+										charName={character?.name}
+										userName={data.user?.displayName}
+									/>
 								</div>
 
 								<!-- Swipe controls for assistant messages (only on last message) -->

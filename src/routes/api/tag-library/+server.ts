@@ -1,8 +1,21 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { db } from '$lib/server/db';
-import { tagLibrary } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+const DATA_DIR = 'data';
+
+function getTagLibraryPath(userId: string): string {
+	return path.join(DATA_DIR, `tags_${userId}.txt`);
+}
+
+async function ensureDataDir(): Promise<void> {
+	try {
+		await fs.access(DATA_DIR);
+	} catch {
+		await fs.mkdir(DATA_DIR, { recursive: true });
+	}
+}
 
 export const GET: RequestHandler = async ({ cookies }) => {
 	const userId = cookies.get('userId');
@@ -12,27 +25,21 @@ export const GET: RequestHandler = async ({ cookies }) => {
 	}
 
 	try {
-		const userIdInt = parseInt(userId);
+		await ensureDataDir();
+		const filePath = getTagLibraryPath(userId);
 
-		// Get or create tag library for user
-		let library = await db.query.tagLibrary.findFirst({
-			where: eq(tagLibrary.userId, userIdInt)
-		});
+		let content = '';
+		let updatedAt: Date | null = null;
 
-		if (!library) {
-			// Create default tag library
-			const [newLibrary] = await db
-				.insert(tagLibrary)
-				.values({
-					userId: userIdInt,
-					content: '',
-					updatedAt: new Date()
-				})
-				.returning();
-			library = newLibrary;
+		try {
+			content = await fs.readFile(filePath, 'utf-8');
+			const stats = await fs.stat(filePath);
+			updatedAt = stats.mtime;
+		} catch {
+			// File doesn't exist yet, return empty content
 		}
 
-		return json(library);
+		return json({ content, updatedAt });
 	} catch (error) {
 		console.error('Error fetching tag library:', error);
 		return json({ error: 'Failed to fetch tag library' }, { status: 500 });
@@ -47,42 +54,19 @@ export const PUT: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const userIdInt = parseInt(userId);
 		const { content } = await request.json();
 
 		if (typeof content !== 'string') {
 			return json({ error: 'Invalid content' }, { status: 400 });
 		}
 
-		// Check if library exists
-		const existing = await db.query.tagLibrary.findFirst({
-			where: eq(tagLibrary.userId, userIdInt)
-		});
+		await ensureDataDir();
+		const filePath = getTagLibraryPath(userId);
 
-		let library;
-		if (existing) {
-			// Update existing
-			[library] = await db
-				.update(tagLibrary)
-				.set({
-					content,
-					updatedAt: new Date()
-				})
-				.where(eq(tagLibrary.userId, userIdInt))
-				.returning();
-		} else {
-			// Create new
-			[library] = await db
-				.insert(tagLibrary)
-				.values({
-					userId: userIdInt,
-					content,
-					updatedAt: new Date()
-				})
-				.returning();
-		}
+		await fs.writeFile(filePath, content, 'utf-8');
+		const stats = await fs.stat(filePath);
 
-		return json(library);
+		return json({ content, updatedAt: stats.mtime });
 	} catch (error) {
 		console.error('Error updating tag library:', error);
 		return json({ error: 'Failed to update tag library' }, { status: 500 });

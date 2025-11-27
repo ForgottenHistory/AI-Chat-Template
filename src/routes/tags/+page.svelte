@@ -6,6 +6,7 @@
 
 	let tagLibraryContent = $state('');
 	let isSaving = $state(false);
+	let isResetting = $state(false);
 	let lastSaved = $state<Date | null>(null);
 	let isLoading = $state(true);
 	let selectedText = $state('');
@@ -68,6 +69,47 @@
 			showMessage('error', 'Failed to save tag library');
 		} finally {
 			isSaving = false;
+		}
+	}
+
+	async function resetToDefault() {
+		if (!confirm('Are you sure you want to reset to default tags? This will replace all your current tags.')) {
+			return;
+		}
+
+		try {
+			isResetting = true;
+			const response = await fetch('/api/tag-library/default');
+			if (response.ok) {
+				const data = await response.json();
+				tagLibraryContent = data.content;
+
+				// Save the default tags
+				const saveResponse = await fetch('/api/tag-library', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ content: tagLibraryContent })
+				});
+
+				if (saveResponse.ok) {
+					const library = await saveResponse.json();
+					lastSaved = new Date(library.updatedAt);
+					showMessage('success', 'Reset to default tags and saved!');
+				} else {
+					showMessage('error', 'Failed to save default tags');
+				}
+
+				if (containerRef) {
+					containerRef.scrollTo({ top: 0, behavior: 'smooth' });
+				}
+			} else {
+				showMessage('error', 'Failed to load default tags');
+			}
+		} catch (error) {
+			console.error('Failed to reset to default:', error);
+			showMessage('error', 'Failed to reset to default tags');
+		} finally {
+			isResetting = false;
 		}
 	}
 
@@ -343,6 +385,20 @@
 									class="px-8 py-3 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white rounded-lg transition font-semibold shadow-lg hover:shadow-xl"
 								>
 									Reload
+								</button>
+								<button
+									onclick={resetToDefault}
+									disabled={isResetting || isSaving}
+									class="px-8 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white rounded-lg transition font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
+								>
+									{#if isResetting}
+										<div
+											class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+										></div>
+										Loading...
+									{:else}
+										Reset to Default
+									{/if}
 								</button>
 							</div>
 

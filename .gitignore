@@ -31,3 +31,6 @@ local.db-wal
 logs/
 server.log
 .claude/settings.local.json
+
+# User data
+data/
