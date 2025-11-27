@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { messages, conversations, characters, llmSettings } from '$lib/server/db/schema';
 import { eq, and, lt } from 'drizzle-orm';
 import { generateChatCompletion } from '$lib/server/llm';
+import { emitTyping } from '$lib/server/socket';
 
 // POST - Regenerate a message (create new swipe variant)
 export const POST: RequestHandler = async ({ params, cookies }) => {
@@ -74,6 +75,9 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 			return json({ error: 'LLM settings not found' }, { status: 404 });
 		}
 
+		// Emit typing indicator
+		emitTyping(conversation.id, true);
+
 		// Generate new response
 		const newContent = await generateChatCompletion(
 			conversationHistory,
@@ -89,6 +93,9 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 		// Add new variant to swipes
 		swipes.push(newContent);
 
+		// Stop typing indicator
+		emitTyping(conversation.id, false);
+
 		// Update message with new swipe
 		await db
 			.update(messages)
@@ -99,7 +106,7 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 			})
 			.where(eq(messages.id, messageId));
 
-		return json({ success: true, content: newContent });
+		return json({ success: true, content: newContent, swipeCount: swipes.length });
 	} catch (error) {
 		console.error('Failed to regenerate message:', error);
 		return json({ error: 'Failed to regenerate message' }, { status: 500 });

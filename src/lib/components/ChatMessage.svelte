@@ -17,20 +17,23 @@
 			.replace(/\{\{char\}\}/gi, charName)
 			.replace(/\{\{user\}\}/gi, userName);
 
-		// Normalize whitespace inside asterisks: * text * -> *text*
-		// Match asterisk, optional whitespace, content, optional whitespace, asterisk
+		// Normalize curly/smart quotes to straight quotes
+		processed = processed
+			.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')  // Various double quotes
+			.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'"); // Various single quotes
+
+		// Step 1: Protect quoted dialogue by replacing with placeholders
+		// Match opening quote, then everything until closing quote (including newlines, asterisks, etc.)
+		const dialogues: string[] = [];
+		processed = processed.replace(/"([^"]*)"/g, (match, content) => {
+			dialogues.push(content);
+			return `%%DIALOGUE_${dialogues.length - 1}%%`;
+		});
+
+		// Step 2: Normalize and process asterisks for actions (outside of dialogue)
 		processed = processed.replace(/\*(\s*)([^*]+?)(\s*)\*/g, (match, leadingSpace, content, trailingSpace) => {
-			return `*${content.trim()}*`;
+			return `%%ACTION_START%%${content.trim()}%%ACTION_END%%`;
 		});
-
-		// Normalize whitespace inside quotes: " text " -> "text"
-		processed = processed.replace(/"(\s*)([^"]+?)(\s*)"/g, (match, leadingSpace, content, trailingSpace) => {
-			return `"${content.trim()}"`;
-		});
-
-		// Style quoted text "dialogue" BEFORE markdown parsing
-		// to avoid matching quotes inside HTML attributes
-		processed = processed.replace(/"([^"]+)"/g, '%%DIALOGUE_START%%$1%%DIALOGUE_END%%');
 
 		// Configure marked for safe rendering
 		marked.setOptions({
@@ -41,12 +44,23 @@
 		// Parse markdown
 		let html = marked.parse(processed, { async: false }) as string;
 
-		// Convert <em> tags (from *text*) to RP action styling
-		html = html.replace(/<em>([^<]+)<\/em>/g, '<span class="rp-action">$1</span>');
+		// Step 3: Restore dialogues - process any asterisks inside them too
+		dialogues.forEach((content, i) => {
+			// Process asterisks within dialogue
+			let processedContent = content.replace(/\*(\s*)([^*]+?)(\s*)\*/g, (m, ls, c, ts) => {
+				return `<span class="rp-action">${c.trim()}</span>`;
+			});
+			// Use regex to ensure we find the placeholder even if marked modified surrounding text
+			const placeholder = new RegExp(`%%DIALOGUE_${i}%%`, 'g');
+			html = html.replace(placeholder, `<span class="rp-dialogue">"${processedContent}"</span>`);
+		});
 
-		// Restore dialogue styling
-		html = html.replace(/%%DIALOGUE_START%%/g, '<span class="rp-dialogue">"');
-		html = html.replace(/%%DIALOGUE_END%%/g, '"</span>');
+		// Step 4: Convert action placeholders to styled spans
+		html = html.replace(/%%ACTION_START%%/g, '<span class="rp-action">');
+		html = html.replace(/%%ACTION_END%%/g, '</span>');
+
+		// Clean up any leftover <em> tags from markdown that weren't caught
+		html = html.replace(/<em>([^<]+)<\/em>/g, '<span class="rp-action">$1</span>');
 
 		return html;
 	}

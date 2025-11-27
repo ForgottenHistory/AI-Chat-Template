@@ -9,15 +9,17 @@
 		isLast: boolean;
 		charName: string | undefined;
 		userName: string | undefined;
+		generating: boolean;
 		onSwipe: (direction: 'left' | 'right') => void;
 		onSaveEdit: (content: string) => void;
 		onDelete: () => void;
 	}
 
-	let { message, index, isLast, charName, userName, onSwipe, onSaveEdit, onDelete }: Props = $props();
+	let { message, index, isLast, charName, userName, generating, onSwipe, onSaveEdit, onDelete }: Props = $props();
 
 	let isUser = $derived(message.role === 'user');
 	let showSwipeControls = $derived(message.role === 'assistant' && isLast);
+	let showGeneratingPlaceholder = $derived(generating && isLast && message.role === 'assistant');
 
 	// Inline edit state
 	let isEditing = $state(false);
@@ -75,7 +77,15 @@
 				? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
 				: 'bg-white border border-gray-200 text-gray-900'} {isEditing ? 'ring-2 ring-purple-500' : ''}"
 		>
-			{#if isEditing}
+			{#if showGeneratingPlaceholder}
+				<div class="flex items-center gap-2">
+					<div class="flex gap-1">
+						<div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+						<div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+						<div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+					</div>
+				</div>
+			{:else if isEditing}
 				<div
 					bind:this={editableRef}
 					contenteditable="true"
@@ -114,7 +124,7 @@
 			{onSwipe}
 			onEdit={startEdit}
 			{onDelete}
-			disabled={isEditing}
+			disabled={isEditing || generating}
 		/>
 	</div>
 </div>

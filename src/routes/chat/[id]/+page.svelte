@@ -21,6 +21,7 @@
 	let messages = $state<Message[]>([]);
 	let loading = $state(true);
 	let sending = $state(false);
+	let regenerating = $state(false);
 	let conversationId = $state<number | null>(null);
 	let isTyping = $state(false);
 	let chatMessages: ChatMessages;
@@ -247,19 +248,38 @@
 	}
 
 	async function regenerateMessage(messageId: number) {
+		const messageIndex = messages.findIndex(m => m.id === messageId);
+		if (messageIndex === -1) return;
+
+		regenerating = true; // Disable message controls while generating
+
 		try {
 			const response = await fetch(`/api/chat/messages/${messageId}/regenerate`, {
 				method: 'POST'
 			});
 
 			if (response.ok) {
-				await loadConversation();
+				const result = await response.json();
+				// Update message locally with new content and swipe count
+				const message = messages[messageIndex];
+				const swipes = getSwipes(message);
+				swipes.push(result.content);
+
+				messages[messageIndex] = {
+					...message,
+					content: result.content,
+					swipes: JSON.stringify(swipes),
+					currentSwipe: swipes.length - 1
+				};
+				messages = [...messages];
 			} else {
 				alert('Failed to regenerate message');
 			}
 		} catch (error) {
 			console.error('Failed to regenerate message:', error);
 			alert('Failed to regenerate message');
+		} finally {
+			regenerating = false;
 		}
 	}
 
@@ -346,6 +366,7 @@
 			{messages}
 			{loading}
 			{isTyping}
+			generating={regenerating}
 			charName={character?.name}
 			userName={data.user?.displayName}
 			onSwipe={swipeMessage}
@@ -354,7 +375,7 @@
 		/>
 
 		<ChatInput
-			disabled={sending}
+			disabled={sending || regenerating}
 			{hasAssistantMessages}
 			onSend={sendMessage}
 			onGenerate={generateResponse}

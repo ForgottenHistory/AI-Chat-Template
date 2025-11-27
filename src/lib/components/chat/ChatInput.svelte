@@ -35,7 +35,7 @@
 	<div class="max-w-4xl mx-auto flex items-end gap-3">
 		<button
 			onclick={onRegenerate}
-			disabled={!hasAssistantMessages}
+			disabled={disabled || !hasAssistantMessages}
 			class="p-3 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition rounded-lg hover:bg-gray-100"
 			title="Regenerate last response"
 		>
@@ -49,7 +49,6 @@
 			placeholder="Type a message..."
 			rows="1"
 			class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-			{disabled}
 		></textarea>
 		<button
 			onclick={handleSubmit}
@@ -57,9 +56,7 @@
 			class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
 			title={input.trim() ? 'Send message' : 'Generate bot response'}
 		>
-			{#if disabled}
-				Sending...
-			{:else if input.trim()}
+			{#if input.trim()}
 				Send
 			{:else}
 				Generate

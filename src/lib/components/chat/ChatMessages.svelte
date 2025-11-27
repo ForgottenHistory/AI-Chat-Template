@@ -6,6 +6,7 @@
 		messages: Message[];
 		loading: boolean;
 		isTyping: boolean;
+		generating: boolean;
 		charName: string | undefined;
 		userName: string | undefined;
 		onSwipe: (messageId: number, direction: 'left' | 'right') => void;
@@ -13,7 +14,7 @@
 		onDelete: (messageId: number, index: number) => void;
 	}
 
-	let { messages, loading, isTyping, charName, userName, onSwipe, onSaveEdit, onDelete }: Props = $props();
+	let { messages, loading, isTyping, generating, charName, userName, onSwipe, onSaveEdit, onDelete }: Props = $props();
 
 	let container: HTMLDivElement | undefined = $state();
 
@@ -43,12 +44,13 @@
 	{:else}
 		<div class="max-w-4xl mx-auto space-y-4">
 			{#each messages as message, index (message.id)}
-				<MessageBubble
+					<MessageBubble
 					{message}
 					{index}
 					isLast={index === messages.length - 1}
 					{charName}
 					{userName}
+					{generating}
 					onSwipe={(direction) => onSwipe(message.id, direction)}
 					onSaveEdit={(content) => onSaveEdit(message.id, index, content)}
 					onDelete={() => onDelete(message.id, index)}
@@ -56,8 +58,8 @@
 			{/each}
 		</div>
 
-		<!-- Typing Indicator -->
-		{#if isTyping}
+		<!-- Typing Indicator (only show when not regenerating an existing message) -->
+		{#if isTyping && !generating}
 			<div class="max-w-4xl mx-auto mt-4">
 				<div class="flex justify-start">
 					<div class="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-3">
