@@ -23,14 +23,19 @@
 	// Local display state (updates immediately on save)
 	let displayName = $state<string | null>(null);
 	let displayTags = $state<string[] | null>(null);
+	let displayData = $state<Record<string, any> | null>(null);
 
 	// Reset local state when character changes
 	$effect(() => {
 		if (character) {
 			displayName = null;
 			displayTags = null;
+			displayData = null;
 		}
 	});
+
+	// Use local state if set, otherwise use prop-derived values
+	const currentData = $derived(displayData ?? data);
 
 	// Use local state if set, otherwise use prop-derived values
 	const currentName = $derived(displayName ?? character?.name ?? '');
@@ -90,6 +95,80 @@
 			error = 'Failed to save tags';
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function handleOverviewFieldSave(field: string, value: string) {
+		if (!character) return;
+
+		try {
+			// For description, update directly on character
+			if (field === 'description') {
+				const response = await fetch(`/api/characters/${character.id}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ description: value })
+				});
+
+				if (!response.ok) throw new Error('Failed to update description');
+
+				// Update local display state
+				character.description = value;
+			} else {
+				// For cardData fields (scenario, personality, creator_notes), update the cardData
+				const updatedCardData = { ...cardData };
+				if (!updatedCardData.data) updatedCardData.data = {};
+				updatedCardData.data[field] = value;
+
+				const response = await fetch(`/api/characters/${character.id}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ cardData: updatedCardData })
+				});
+
+				if (!response.ok) throw new Error(`Failed to update ${field}`);
+
+				// Update local display state
+				displayData = { ...currentData, [field]: value };
+			}
+
+			success = 'Updated successfully!';
+			setTimeout(() => (success = null), 3000);
+			if (onUpdate) onUpdate();
+		} catch (err) {
+			console.error(`Failed to save ${field}:`, err);
+			error = `Failed to save ${field}`;
+			throw err;
+		}
+	}
+
+	async function handleMessagesFieldSave(field: string, value: string | string[]) {
+		if (!character) return;
+
+		try {
+			// All message fields are in cardData
+			const updatedCardData = { ...cardData };
+			if (!updatedCardData.data) updatedCardData.data = {};
+			updatedCardData.data[field] = value;
+
+			const response = await fetch(`/api/characters/${character.id}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ cardData: updatedCardData })
+			});
+
+			if (!response.ok) throw new Error(`Failed to update ${field}`);
+
+			// Update local display state
+			displayData = { ...currentData, [field]: value };
+
+			success = 'Updated successfully!';
+			setTimeout(() => (success = null), 3000);
+			if (onUpdate) onUpdate();
+		} catch (err) {
+			console.error(`Failed to save ${field}:`, err);
+			error = `Failed to save ${field}`;
+			throw err;
 		}
 	}
 
@@ -163,7 +242,7 @@
 		aria-modal="true"
 	>
 		<div
-			class="bg-[var(--bg-secondary)] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-[var(--border-primary)] flex"
+			class="bg-[var(--bg-secondary)] rounded-2xl max-w-4xl w-full h-[85vh] overflow-hidden shadow-2xl border border-[var(--border-primary)] flex"
 		>
 			<!-- Left Side: Character Image -->
 			<ProfileImage
@@ -191,9 +270,9 @@
 				<!-- Scrollable Tab Content -->
 				<div class="flex-1 overflow-y-auto p-6">
 					{#if activeTab === 'overview'}
-						<OverviewTab {character} {data} />
+						<OverviewTab {character} data={currentData} onSave={handleOverviewFieldSave} />
 					{:else if activeTab === 'messages'}
-						<MessagesTab {data} />
+						<MessagesTab data={currentData} onSave={handleMessagesFieldSave} />
 					{:else if activeTab === 'image'}
 						<ImageTab
 							{character}

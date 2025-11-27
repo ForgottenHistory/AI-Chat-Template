@@ -48,12 +48,14 @@ export const PUT: RequestHandler = async ({ params, cookies, request }) => {
 
 	try {
 		const body = await request.json();
-		const { name, tags } = body;
+		const { name, tags, description, cardData } = body;
 
 		// Build update object with only provided fields
 		const updateData: Record<string, any> = {};
 		if (name !== undefined) updateData.name = name;
 		if (tags !== undefined) updateData.tags = JSON.stringify(tags);
+		if (description !== undefined) updateData.description = description;
+		if (cardData !== undefined) updateData.cardData = JSON.stringify(cardData);
 
 		if (Object.keys(updateData).length === 0) {
 			return json({ error: 'No fields to update' }, { status: 400 });

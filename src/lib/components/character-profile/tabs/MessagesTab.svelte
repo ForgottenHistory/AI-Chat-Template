@@ -7,64 +7,335 @@
 			mes_example?: string;
 			alternate_greetings?: string[];
 		};
+		onSave: (field: string, value: string | string[]) => Promise<void>;
 	}
 
-	let { data }: Props = $props();
+	let { data, onSave }: Props = $props();
 
 	let mesExampleExpanded = $state(false);
 	let alternateGreetingsExpanded = $state(false);
+
+	// Edit states
+	let editingFirstMes = $state(false);
+	let editingMesExample = $state(false);
+	let editingGreetingIndex = $state<number | null>(null);
+
+	// Edit values
+	let editFirstMes = $state('');
+	let editMesExample = $state('');
+	let editGreeting = $state('');
+
+	// Saving states
+	let savingFirstMes = $state(false);
+	let savingMesExample = $state(false);
+	let savingGreeting = $state(false);
+	let addingGreeting = $state(false);
+	let deletingGreetingIndex = $state<number | null>(null);
+
+	function startEditingFirstMes() {
+		editFirstMes = data.first_mes || '';
+		editingFirstMes = true;
+	}
+
+	function startEditingMesExample() {
+		editMesExample = data.mes_example || '';
+		editingMesExample = true;
+		mesExampleExpanded = true;
+	}
+
+	function startEditingGreeting(index: number) {
+		editGreeting = data.alternate_greetings?.[index] || '';
+		editingGreetingIndex = index;
+		alternateGreetingsExpanded = true;
+	}
+
+	async function saveFirstMes() {
+		savingFirstMes = true;
+		try {
+			await onSave('first_mes', editFirstMes);
+			editingFirstMes = false;
+		} catch (err) {
+			console.error('Failed to save first message:', err);
+		} finally {
+			savingFirstMes = false;
+		}
+	}
+
+	async function saveMesExample() {
+		savingMesExample = true;
+		try {
+			await onSave('mes_example', editMesExample);
+			editingMesExample = false;
+		} catch (err) {
+			console.error('Failed to save message example:', err);
+		} finally {
+			savingMesExample = false;
+		}
+	}
+
+	async function saveGreeting() {
+		if (editingGreetingIndex === null) return;
+		savingGreeting = true;
+		try {
+			const updatedGreetings = [...(data.alternate_greetings || [])];
+			updatedGreetings[editingGreetingIndex] = editGreeting;
+			await onSave('alternate_greetings', updatedGreetings);
+			editingGreetingIndex = null;
+		} catch (err) {
+			console.error('Failed to save greeting:', err);
+		} finally {
+			savingGreeting = false;
+		}
+	}
+
+	function cancelEdit(field: 'first_mes' | 'mes_example' | 'greeting') {
+		if (field === 'first_mes') {
+			editingFirstMes = false;
+			editFirstMes = '';
+		} else if (field === 'mes_example') {
+			editingMesExample = false;
+			editMesExample = '';
+		} else if (field === 'greeting') {
+			editingGreetingIndex = null;
+			editGreeting = '';
+		}
+	}
+
+	async function addGreeting() {
+		addingGreeting = true;
+		try {
+			const updatedGreetings = [...(data.alternate_greetings || []), ''];
+			await onSave('alternate_greetings', updatedGreetings);
+			// Start editing the new greeting
+			alternateGreetingsExpanded = true;
+			editGreeting = '';
+			editingGreetingIndex = updatedGreetings.length - 1;
+		} catch (err) {
+			console.error('Failed to add greeting:', err);
+		} finally {
+			addingGreeting = false;
+		}
+	}
+
+	async function deleteGreeting(index: number) {
+		deletingGreetingIndex = index;
+		try {
+			const updatedGreetings = [...(data.alternate_greetings || [])];
+			updatedGreetings.splice(index, 1);
+			await onSave('alternate_greetings', updatedGreetings);
+			// Reset edit state if we were editing this greeting
+			if (editingGreetingIndex === index) {
+				editingGreetingIndex = null;
+				editGreeting = '';
+			} else if (editingGreetingIndex !== null && editingGreetingIndex > index) {
+				// Adjust index if we were editing a later greeting
+				editingGreetingIndex = editingGreetingIndex - 1;
+			}
+		} catch (err) {
+			console.error('Failed to delete greeting:', err);
+		} finally {
+			deletingGreetingIndex = null;
+		}
+	}
 </script>
 
 <div class="space-y-4">
 	<h3 class="text-xl font-semibold text-[var(--text-primary)] mb-4">Character Messages</h3>
 
 	<!-- First Message (always visible) -->
-	{#if data.first_mes}
-		<div>
-			<h4 class="text-sm font-medium text-[var(--text-secondary)] mb-2">First Message</h4>
+	<div>
+		<div class="flex items-center justify-between mb-2 group">
+			<h4 class="text-sm font-medium text-[var(--text-secondary)]">First Message</h4>
+			{#if !editingFirstMes}
+				<button
+					onclick={startEditingFirstMes}
+					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
+					aria-label="Edit first message"
+				>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+					</svg>
+				</button>
+			{/if}
+		</div>
+		{#if editingFirstMes}
+			<div class="space-y-2">
+				<textarea
+					bind:value={editFirstMes}
+					rows="8"
+					class="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-none"
+					placeholder="Enter first message..."
+				></textarea>
+				<div class="flex gap-2">
+					<button
+						onclick={saveFirstMes}
+						disabled={savingFirstMes}
+						class="px-3 py-1.5 bg-[var(--accent-primary)] text-white text-sm rounded-lg hover:opacity-90 transition disabled:opacity-50"
+					>
+						{savingFirstMes ? 'Saving...' : 'Save'}
+					</button>
+					<button
+						onclick={() => cancelEdit('first_mes')}
+						disabled={savingFirstMes}
+						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-sm rounded-lg hover:bg-[var(--border-primary)] transition"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		{:else if data.first_mes}
 			<div
 				class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed bg-[var(--bg-tertiary)] p-4 rounded-lg border border-[var(--border-primary)]"
 			>
 				{data.first_mes}
 			</div>
-		</div>
-	{:else}
-		<p class="text-[var(--text-muted)] italic">No first message available</p>
-	{/if}
+		{:else}
+			<p class="text-[var(--text-muted)] italic">No first message available</p>
+		{/if}
+	</div>
 
 	<!-- Collapsible: Message Example -->
-	{#if data.mes_example}
-		<CollapsibleSection
-			title="Message Example"
-			expanded={mesExampleExpanded}
-			onToggle={() => (mesExampleExpanded = !mesExampleExpanded)}
-		>
-			<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed font-mono text-sm">
-				{data.mes_example}
+	<CollapsibleSection
+		title="Message Example"
+		expanded={mesExampleExpanded}
+		onToggle={() => (mesExampleExpanded = !mesExampleExpanded)}
+	>
+		{#if editingMesExample}
+			<div class="space-y-2">
+				<textarea
+					bind:value={editMesExample}
+					rows="12"
+					class="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-none font-mono text-sm"
+					placeholder="Enter message example..."
+				></textarea>
+				<div class="flex gap-2">
+					<button
+						onclick={saveMesExample}
+						disabled={savingMesExample}
+						class="px-3 py-1.5 bg-[var(--accent-primary)] text-white text-sm rounded-lg hover:opacity-90 transition disabled:opacity-50"
+					>
+						{savingMesExample ? 'Saving...' : 'Save'}
+					</button>
+					<button
+						onclick={() => cancelEdit('mes_example')}
+						disabled={savingMesExample}
+						class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-sm rounded-lg hover:bg-[var(--border-primary)] transition"
+					>
+						Cancel
+					</button>
+				</div>
 			</div>
-		</CollapsibleSection>
-	{/if}
+		{:else}
+			<div class="flex items-start justify-between gap-2">
+				<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed font-mono text-sm flex-1">
+					{data.mes_example || 'No message example available'}
+				</div>
+				<button
+					onclick={startEditingMesExample}
+					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition flex-shrink-0"
+					aria-label="Edit message example"
+				>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+					</svg>
+				</button>
+			</div>
+		{/if}
+	</CollapsibleSection>
 
 	<!-- Collapsible: Alternate Greetings -->
-	{#if data.alternate_greetings && data.alternate_greetings.length > 0}
-		<CollapsibleSection
-			title="Alternate Greetings"
-			badge={data.alternate_greetings.length}
-			expanded={alternateGreetingsExpanded}
-			onToggle={() => (alternateGreetingsExpanded = !alternateGreetingsExpanded)}
-		>
-			<div class="space-y-3">
+	<CollapsibleSection
+		title="Alternate Greetings"
+		badge={data.alternate_greetings?.length || 0}
+		expanded={alternateGreetingsExpanded}
+		onToggle={() => (alternateGreetingsExpanded = !alternateGreetingsExpanded)}
+	>
+		<div class="space-y-3">
+			{#if data.alternate_greetings && data.alternate_greetings.length > 0}
 				{#each data.alternate_greetings as greeting, index}
 					<div class="p-4 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg">
-						<div class="flex items-center gap-2 mb-2">
+						<div class="flex items-center justify-between mb-2 group">
 							<span class="text-xs font-medium text-[var(--text-muted)]">Greeting {index + 2}</span>
+							{#if editingGreetingIndex !== index}
+								<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+									<button
+										onclick={() => startEditingGreeting(index)}
+										class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition"
+										aria-label="Edit greeting {index + 2}"
+									>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+										</svg>
+									</button>
+									<button
+										onclick={() => deleteGreeting(index)}
+										disabled={deletingGreetingIndex === index}
+										class="p-1.5 text-[var(--text-muted)] hover:text-[var(--error)] hover:bg-[var(--error)]/10 rounded-lg transition disabled:opacity-50"
+										aria-label="Delete greeting {index + 2}"
+									>
+										{#if deletingGreetingIndex === index}
+											<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+										{:else}
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+											</svg>
+										{/if}
+									</button>
+								</div>
+							{/if}
 						</div>
-						<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
-							{greeting}
-						</div>
+						{#if editingGreetingIndex === index}
+							<div class="space-y-2">
+								<textarea
+									bind:value={editGreeting}
+									rows="6"
+									class="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-none"
+									placeholder="Enter greeting..."
+								></textarea>
+								<div class="flex gap-2">
+									<button
+										onclick={saveGreeting}
+										disabled={savingGreeting}
+										class="px-3 py-1.5 bg-[var(--accent-primary)] text-white text-sm rounded-lg hover:opacity-90 transition disabled:opacity-50"
+									>
+										{savingGreeting ? 'Saving...' : 'Save'}
+									</button>
+									<button
+										onclick={() => cancelEdit('greeting')}
+										disabled={savingGreeting}
+										class="px-3 py-1.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-sm rounded-lg hover:bg-[var(--border-primary)] transition"
+									>
+										Cancel
+									</button>
+								</div>
+							</div>
+						{:else}
+							<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
+								{greeting || '(Empty greeting)'}
+							</div>
+						{/if}
 					</div>
 				{/each}
-			</div>
-		</CollapsibleSection>
-	{/if}
+			{:else}
+				<p class="text-[var(--text-muted)] italic">No alternate greetings available</p>
+			{/if}
+
+			<!-- Add Greeting Button -->
+			<button
+				onclick={addGreeting}
+				disabled={addingGreeting}
+				class="w-full p-3 border-2 border-dashed border-[var(--border-primary)] hover:border-[var(--accent-primary)] rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition flex items-center justify-center gap-2 disabled:opacity-50"
+			>
+				{#if addingGreeting}
+					<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+					Adding...
+				{:else}
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+					</svg>
+					Add Greeting
+				{/if}
+			</button>
+		</div>
+	</CollapsibleSection>
 </div>
