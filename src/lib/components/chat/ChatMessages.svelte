@@ -42,7 +42,7 @@
 			</div>
 		</div>
 	{:else}
-		<div class="max-w-4xl mx-auto space-y-4">
+		<div class="space-y-4">
 			{#each messages as message, index (message.id)}
 				<MessageBubble
 					{message}
@@ -60,7 +60,7 @@
 
 		<!-- Typing Indicator (only show when not regenerating an existing message) -->
 		{#if isTyping && !generating}
-			<div class="max-w-4xl mx-auto mt-4">
+			<div class="mt-4">
 				<div class="flex justify-start">
 					<div class="flex items-center gap-2 bg-[var(--assistant-bubble)] border border-[var(--assistant-border)] rounded-2xl px-4 py-3">
 						<div class="flex gap-1">
