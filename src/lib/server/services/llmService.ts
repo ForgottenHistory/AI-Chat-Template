@@ -1,0 +1,233 @@
+import axios from 'axios';
+import { llmSettingsService } from './llmSettingsService';
+import { queueService } from './queueService';
+import { OPENROUTER_API_KEY, OPENROUTER_BASE_URL, FEATHERLESS_API_KEY } from '$env/static/private';
+
+interface Message {
+	role: 'system' | 'user' | 'assistant';
+	content: string;
+}
+
+interface ChatCompletionParams {
+	messages: Message[];
+	userId?: number;
+	model?: string;
+	temperature?: number;
+	maxTokens?: number;
+}
+
+interface ChatCompletionResponse {
+	content: string;
+	model: string;
+	usage: {
+		prompt_tokens: number;
+		completion_tokens: number;
+		total_tokens: number;
+	};
+}
+
+interface ProviderConfig {
+	apiKey: string;
+	baseUrl: string;
+	name: string;
+}
+
+class LlmService {
+	private openrouterApiKey: string;
+	private featherlessApiKey: string;
+	private openrouterBaseUrl: string;
+	private featherlessBaseUrl: string;
+
+	constructor() {
+		this.openrouterApiKey = OPENROUTER_API_KEY || '';
+		this.featherlessApiKey = FEATHERLESS_API_KEY || '';
+		this.openrouterBaseUrl = OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+		this.featherlessBaseUrl = 'https://api.featherless.ai/v1';
+
+		if (!this.openrouterApiKey) {
+			console.warn('⚠️  OPENROUTER_API_KEY not found in environment variables');
+		}
+		if (!this.featherlessApiKey) {
+			console.warn('⚠️  FEATHERLESS_API_KEY not found in environment variables');
+		}
+	}
+
+	/**
+	 * Get provider configuration (API key and base URL)
+	 */
+	private getProviderConfig(provider: string): ProviderConfig {
+		const normalized = provider?.toLowerCase() || 'openrouter';
+
+		switch (normalized) {
+			case 'featherless':
+				return {
+					apiKey: this.featherlessApiKey,
+					baseUrl: this.featherlessBaseUrl,
+					name: 'Featherless'
+				};
+			case 'openrouter':
+			default:
+				return {
+					apiKey: this.openrouterApiKey,
+					baseUrl: this.openrouterBaseUrl,
+					name: 'OpenRouter'
+				};
+		}
+	}
+
+	/**
+	 * Check if an error is retryable (rate limit or server error)
+	 */
+	private isRetryableError(error: any): boolean {
+		const status = error.response?.status;
+		// Retry on: 429 (rate limit), 500, 502, 503, 504 (server errors)
+		return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+	}
+
+	/**
+	 * Sleep for specified milliseconds
+	 */
+	private sleep(ms: number): Promise<void> {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	/**
+	 * Create a chat completion with retry logic and queueing
+	 */
+	async createChatCompletion(params: ChatCompletionParams): Promise<ChatCompletionResponse> {
+		const { messages, userId, model, temperature, maxTokens } = params;
+
+		// Get user settings or defaults
+		const userSettings = userId
+			? await llmSettingsService.getUserSettings(userId)
+			: llmSettingsService.getDefaultSettings();
+
+		const selectedModel = model || userSettings.model;
+		const selectedTemperature = temperature ?? userSettings.temperature;
+		const selectedMaxTokens = maxTokens ?? userSettings.maxTokens;
+		const provider = userSettings.provider || 'openrouter';
+
+		// Get provider configuration
+		const providerConfig = this.getProviderConfig(provider);
+
+		if (!providerConfig.apiKey) {
+			throw new Error(`${providerConfig.name} API key not configured`);
+		}
+
+		console.log(`🤖 ${providerConfig.name} Request:`, {
+			provider,
+			model: selectedModel,
+			temperature: selectedTemperature,
+			max_tokens: selectedMaxTokens,
+			messageCount: messages.length
+		});
+
+		// Build request body
+		const requestBody = {
+			model: selectedModel,
+			messages,
+			temperature: selectedTemperature,
+			max_tokens: selectedMaxTokens,
+			top_p: userSettings.topP,
+			frequency_penalty: userSettings.frequencyPenalty,
+			presence_penalty: userSettings.presencePenalty
+		};
+
+		// Retry logic with exponential backoff
+		const maxRetries = 3;
+		let lastError: any = null;
+
+		for (let attempt = 0; attempt <= maxRetries; attempt++) {
+			try {
+				// Execute request through queue to respect concurrency limits
+				const response = await queueService.enqueue(provider, async () => {
+					return await axios.post(
+						`${providerConfig.baseUrl}/chat/completions`,
+						requestBody,
+						{
+							headers: {
+								Authorization: `Bearer ${providerConfig.apiKey}`,
+								'Content-Type': 'application/json',
+								'HTTP-Referer': 'https://localhost:5173',
+								'X-Title': 'Random-Encounter'
+							},
+							timeout: 120000 // 120 second timeout
+						}
+					);
+				});
+
+				// Success! Break out of retry loop
+				if (attempt > 0) {
+					console.log(
+						`✅ ${providerConfig.name} request succeeded after ${attempt} ${attempt === 1 ? 'retry' : 'retries'}`
+					);
+				}
+
+				const message = response.data.choices[0].message;
+				let content = message.content;
+
+				// Strip any <think></think> tags (reasoning output)
+				content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+				content = content.replace(/<\/?think>/gi, '').trim();
+
+				console.log(`✅ ${providerConfig.name} Response:`, {
+					provider,
+					model: response.data.model,
+					contentLength: content?.length || 0,
+					usage: response.data.usage
+				});
+
+				return {
+					content,
+					model: response.data.model,
+					usage: response.data.usage
+				};
+			} catch (error: any) {
+				lastError = error;
+				const status = error.response?.status;
+
+				// Check if error is retryable
+				if (attempt < maxRetries && this.isRetryableError(error)) {
+					// Calculate exponential backoff: 1s, 2s, 4s
+					const delayMs = Math.pow(2, attempt) * 1000;
+					console.warn(
+						`⚠️  ${providerConfig.name} request failed (${status || error.code}), retrying in ${delayMs}ms... (attempt ${attempt + 1}/${maxRetries})`
+					);
+					await this.sleep(delayMs);
+					continue; // Retry
+				}
+
+				// Non-retryable error or max retries exceeded
+				console.error(`❌ ${providerConfig.name} API error (after ${attempt} retries):`, {
+					provider,
+					message: error.message,
+					status: error.response?.status,
+					statusText: error.response?.statusText,
+					data: error.response?.data,
+					model: selectedModel
+				});
+				break;
+			}
+		}
+
+		// All retries failed
+		throw new Error(
+			lastError.response?.data?.error?.message ||
+				lastError.message ||
+				`${providerConfig.name} service error after ${maxRetries} retries`
+		);
+	}
+
+	/**
+	 * Simple completion for basic tasks (single prompt → response)
+	 */
+	async createSimpleCompletion(prompt: string, userId?: number): Promise<string> {
+		const response = await this.createChatCompletion({
+			messages: [{ role: 'user', content: prompt }],
+			userId
+		});
+		return response.content;
+	}
+}
+
+export const llmService = new LlmService();
