@@ -66,16 +66,25 @@ Focus on:
 			}
 		},
 		image: {
-			system: {
-				title: 'System Prompt',
-				description: 'Main prompt for image prompt generation',
-				default: `You are an image prompt generator. Create detailed, descriptive prompts for image generation.
+			generate: {
+				title: 'Image Tag Generation Prompt',
+				description: 'Instructions for generating Danbooru-style tags from roleplay context',
+				default: `Guidelines:
+- Choose 5-10 tags that best match the current scene and conversation context
+- **ALWAYS include a focus/composition tag** (close-up, upper body, cowboy shot, full body, portrait, etc.)
+- **CLOTHING/APPEARANCE MUST BE HIGHLY SPECIFIC** - This is critical!
+  * ALWAYS add color + clothing type: "white shirt", "black jacket", "blue dress", "red hoodie"
+  * Add style details: "torn clothing", "elegant gown", "casual wear", "formal suit"
+  * NEVER use vague terms: "clothes", "outfit" (too vague - specify color/style!)
+- Focus on: expression, pose, action, clothing (COLOR + TYPE + DETAILS), environment, lighting, mood
+- Match the scene to what's happening in the roleplay
 
-Focus on:
-- Visual details and composition
-- Art style and medium
-- Lighting and atmosphere
-- Color palette`
+- Only use tags from the library above or the character-specific tags
+- Output ONLY comma-separated tags, no explanations
+- Be specific and contextual - capture the current scene
+
+Example output format:
+upper body, smiling, white shirt, black jacket, indoor, soft lighting, looking at viewer`
 			}
 		}
 	};

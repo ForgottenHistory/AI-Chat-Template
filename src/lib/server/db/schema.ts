@@ -72,6 +72,28 @@ export const imageLlmSettings = sqliteTable('image_llm_settings', {
 	contextWindow: integer('context_window').notNull().default(4000)
 });
 
+export const sdSettings = sqliteTable('sd_settings', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	mainPrompt: text('main_prompt').notNull().default('masterpiece, best quality, amazing quality, 1girl, solo'),
+	negativePrompt: text('negative_prompt').notNull().default('lowres, bad anatomy, bad hands, text, error, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, speech bubble, multiple views'),
+	model: text('model').notNull().default(''),
+	steps: integer('steps').notNull().default(30),
+	cfgScale: real('cfg_scale').notNull().default(7.0),
+	sampler: text('sampler').notNull().default('DPM++ 2M'),
+	scheduler: text('scheduler').notNull().default('Karras'),
+	enableHr: integer('enable_hr', { mode: 'boolean' }).notNull().default(true),
+	hrScale: real('hr_scale').notNull().default(1.5),
+	hrUpscaler: text('hr_upscaler').notNull().default('Latent'),
+	hrSteps: integer('hr_steps').notNull().default(15),
+	hrCfg: real('hr_cfg').notNull().default(5.0),
+	denoisingStrength: real('denoising_strength').notNull().default(0.7),
+	enableAdetailer: integer('enable_adetailer', { mode: 'boolean' }).notNull().default(false),
+	adetailerModel: text('adetailer_model').notNull().default('face_yolov8n.pt')
+});
+
 export const llmPresets = sqliteTable('llm_presets', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	userId: integer('user_id')
@@ -156,6 +178,8 @@ export type ContentLlmSettings = typeof contentLlmSettings.$inferSelect;
 export type NewContentLlmSettings = typeof contentLlmSettings.$inferInsert;
 export type ImageLlmSettings = typeof imageLlmSettings.$inferSelect;
 export type NewImageLlmSettings = typeof imageLlmSettings.$inferInsert;
+export type SdSettings = typeof sdSettings.$inferSelect;
+export type NewSdSettings = typeof sdSettings.$inferInsert;
 export type LlmPreset = typeof llmPresets.$inferSelect;
 export type NewLlmPreset = typeof llmPresets.$inferInsert;
 export type Character = typeof characters.$inferSelect;

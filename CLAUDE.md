@@ -40,10 +40,21 @@ npm run db:studio     # Open Drizzle Studio (visual DB editor)
 
 ### Database Schema (`src/lib/server/db/schema.ts`)
 
-Tables: users, llmSettings, llmPresets, characters, tagLibrary, conversations, messages
+Tables: users, llmSettings, decisionEngineSettings, contentLlmSettings, imageLlmSettings, llmPresets, characters, tagLibrary, conversations, messages
 
 - Characters store card data as JSON, images as Base64
 - Messages support "swipes" (alternative responses) as JSON array
+
+### Multi-LLM Architecture
+
+Four separate LLM configurations, each with its own settings table and service:
+
+| LLM Type | Purpose | Settings Service |
+|----------|---------|------------------|
+| **Chat** | Character conversations | `llmSettingsService.ts` |
+| **Decision** | Pre-processing decisions before content | `decisionEngineSettingsService.ts` |
+| **Content** | Content creation/generation | `contentLlmSettingsService.ts` |
+| **Image** | Generate Danbooru tags for SD | `imageLlmSettingsService.ts` |
 
 ### LLM Integration (`src/lib/server/`)
 
@@ -51,6 +62,12 @@ Tables: users, llmSettings, llmPresets, characters, tagLibrary, conversations, m
 - `services/llmService.ts` - API calls with retry logic (max 3 retries, exponential backoff)
 - `services/queueService.ts` - Request concurrency control per provider
 - `services/llmLogService.ts` - Stores last 5 prompts/responses per type for debugging
+
+### Image Generation
+
+- `services/imageTagGenerationService.ts` - Generates Danbooru-style tags from conversation context using Image LLM
+- `services/sdService.ts` - Stable Diffusion API integration (txt2img, health check, model listing)
+- Tags are stored per-user in `data/tags_{userId}.txt`
 
 ### Authentication
 
@@ -81,4 +98,5 @@ Create `.env` from `.env.example`:
 ```
 OPENROUTER_API_KEY=sk-or-v1-...
 FEATHERLESS_API_KEY=...  # optional
+SD_SERVER_URL=http://127.0.0.1:7860  # Stable Diffusion server
 ```
