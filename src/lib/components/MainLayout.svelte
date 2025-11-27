@@ -61,16 +61,16 @@
 	}
 </script>
 
-<div class="flex h-screen bg-gray-50">
+<div class="flex h-screen bg-[var(--bg-primary)]">
 	<!-- Left Sidebar -->
 	<div
-		class="bg-white border-r border-gray-200 shadow-lg flex flex-col transition-all duration-300 flex-shrink-0 {sidebarCollapsed
+		class="bg-[var(--sidebar-bg)] border-r border-[var(--border-primary)] shadow-lg flex flex-col transition-all duration-300 flex-shrink-0 {sidebarCollapsed
 			? 'w-0'
 			: 'w-80'} overflow-hidden"
 	>
 		<!-- Logo/Brand -->
-		<div class="p-6 border-b border-gray-200">
-			<h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+		<div class="p-6 border-b border-[var(--border-primary)]">
+			<h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]">
 				App Name
 			</h1>
 		</div>
@@ -78,8 +78,8 @@
 		<!-- Characters List -->
 		<div class="flex-1 overflow-y-auto">
 			<div class="p-5">
-				<div class="mb-5 px-4 py-2 rounded-xl bg-purple-50 border border-purple-100">
-					<h2 class="text-xs font-bold text-purple-700 uppercase tracking-wider">
+				<div class="mb-5 px-4 py-2 rounded-xl bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20">
+					<h2 class="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-wider">
 						Characters ({characters.length})
 					</h2>
 				</div>
@@ -87,10 +87,10 @@
 				{#if characters.length === 0}
 					<div class="text-center py-12 px-4">
 						<div
-							class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center shadow-lg"
+							class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center shadow-lg"
 						>
 							<svg
-								class="w-10 h-10 text-purple-400"
+								class="w-10 h-10 text-[var(--accent-primary)]"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -103,22 +103,22 @@
 								/>
 							</svg>
 						</div>
-						<p class="text-gray-700 font-semibold text-sm mb-1">No characters yet</p>
-						<p class="text-gray-500 text-xs">Import characters to get started!</p>
+						<p class="text-[var(--text-primary)] font-semibold text-sm mb-1">No characters yet</p>
+						<p class="text-[var(--text-muted)] text-xs">Import characters to get started!</p>
 					</div>
 				{:else}
 					<div class="space-y-2">
 						{#each characters as character}
 							<a
 								href="/chat/{character.id}"
-								class="group relative flex items-center gap-3 p-3 rounded-2xl bg-white border border-gray-200 hover:border-purple-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer transition-all duration-300"
+								class="group relative flex items-center gap-3 p-3 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-[var(--accent-primary)]/50 hover:shadow-lg hover:scale-[1.02] cursor-pointer transition-all duration-300"
 							>
 								<!-- Avatar -->
 								<div class="relative flex-shrink-0">
 									<div
-										class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"
+										class="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity"
 									></div>
-									<div class="relative bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl p-0.5">
+									<div class="relative bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-xl p-0.5">
 										{#if character.thumbnailData || character.imageData}
 											<img
 												src={character.thumbnailData || character.imageData}
@@ -127,7 +127,7 @@
 											/>
 										{:else}
 											<div
-												class="w-16 h-20 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl"
+												class="w-16 h-20 rounded-lg bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white font-bold text-xl"
 											>
 												{character.name.charAt(0).toUpperCase()}
 											</div>
@@ -138,12 +138,12 @@
 								<!-- Content -->
 								<div class="flex-1 min-w-0">
 									<div class="flex items-center justify-between mb-0.5">
-										<h3 class="font-bold text-gray-900 truncate">
+										<h3 class="font-bold text-[var(--text-primary)] truncate">
 											{character.name}
 										</h3>
 									</div>
 									{#if character.description}
-										<p class="text-xs text-gray-500 truncate">
+										<p class="text-xs text-[var(--text-muted)] truncate">
 											{character.description}
 										</p>
 									{/if}
@@ -151,7 +151,7 @@
 
 								<!-- Chevron indicator -->
 								<svg
-									class="w-5 h-5 text-gray-300 group-hover:text-purple-500 group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100"
+									class="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100"
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
@@ -171,27 +171,27 @@
 		</div>
 
 		<!-- User Profile at Bottom -->
-		<div class="border-t border-gray-200 p-4 bg-gray-50">
-			<div class="flex items-center gap-3 p-3 rounded-2xl bg-white border border-gray-200">
+		<div class="border-t border-[var(--border-primary)] p-4 bg-[var(--bg-secondary)]">
+			<div class="flex items-center gap-3 p-3 rounded-2xl bg-[var(--bg-tertiary)] border border-[var(--border-primary)]">
 				<a href="/profile" class="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition">
 					<div class="relative">
 						<div
-							class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full blur-sm opacity-50"
+							class="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-full blur-sm opacity-50"
 						></div>
 						<div
-							class="relative w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md"
+							class="relative w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white font-bold shadow-md"
 						>
 							{user.displayName.charAt(0).toUpperCase()}
 						</div>
 					</div>
 					<div class="flex-1 min-w-0">
-						<h3 class="font-bold text-gray-900 truncate text-sm">{user.displayName}</h3>
-						<p class="text-xs text-gray-500 truncate">{user.username}</p>
+						<h3 class="font-bold text-[var(--text-primary)] truncate text-sm">{user.displayName}</h3>
+						<p class="text-xs text-[var(--text-muted)] truncate">{user.username}</p>
 					</div>
 				</a>
 				<a
 					href="/settings"
-					class="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition"
+					class="p-2 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition"
 					title="Settings"
 				>
 					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,7 +218,7 @@
 		onclick={toggleSidebar}
 		class="fixed left-{sidebarCollapsed
 			? '0'
-			: '[312px]'} top-1/2 -translate-y-1/2 z-50 bg-white border border-gray-200 text-gray-600 p-2 rounded-r-lg shadow-md hover:bg-gray-50 transition"
+			: '[312px]'} top-1/2 -translate-y-1/2 z-50 bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] p-2 rounded-r-lg shadow-md hover:bg-[var(--bg-tertiary)] transition"
 		title={sidebarCollapsed ? 'Show characters' : 'Hide characters'}
 	>
 		<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,15 +238,15 @@
 	<!-- Main Content Area -->
 	<div class="flex-1 flex flex-col">
 		<!-- Top Navigation Bar -->
-		<div class="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+		<div class="bg-[var(--bg-secondary)] border-b border-[var(--border-primary)] px-6 py-4 shadow-sm">
 			<div class="flex items-center justify-between">
 				<!-- Left: Nav Buttons -->
 				<div class="flex items-center gap-2">
 						<a
 							href="/"
 							class="px-4 py-2 rounded-lg font-medium transition {isActive('/')
-								? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-								: 'text-gray-600 hover:bg-gray-100'}"
+								? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white'
+								: 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'}"
 						>
 							<div class="flex items-center gap-2">
 								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,8 +264,8 @@
 						<a
 							href="/library"
 							class="px-4 py-2 rounded-lg font-medium transition {isActive('/library')
-								? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-								: 'text-gray-600 hover:bg-gray-100'}"
+								? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white'
+								: 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'}"
 						>
 							<div class="flex items-center gap-2">
 								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,8 +283,8 @@
 						<a
 							href="/prompts"
 							class="px-4 py-2 rounded-lg font-medium transition {isActive('/prompts')
-								? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-								: 'text-gray-600 hover:bg-gray-100'}"
+								? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white'
+								: 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'}"
 						>
 							<div class="flex items-center gap-2">
 								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,8 +302,8 @@
 						<a
 							href="/tags"
 							class="px-4 py-2 rounded-lg font-medium transition {isActive('/tags')
-								? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-								: 'text-gray-600 hover:bg-gray-100'}"
+								? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white'
+								: 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'}"
 						>
 							<div class="flex items-center gap-2">
 								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,7 +324,7 @@
 					<form method="POST" action="/api/auth/logout">
 						<button
 							type="submit"
-							class="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-lg transition"
+							class="p-2 text-[var(--text-muted)] hover:text-[var(--error)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
 							title="Logout"
 						>
 							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -123,39 +123,39 @@
 </svelte:head>
 
 <MainLayout user={data.user} currentPath="/library">
-	<div class="h-full overflow-y-auto">
+	<div class="h-full overflow-y-auto bg-[var(--bg-primary)]">
 		<div class="max-w-7xl mx-auto px-8 py-8">
 			<!-- Stats -->
 			<div class="grid grid-cols-3 gap-4 mb-8">
-				<div class="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-					<div class="text-3xl font-bold text-blue-600 mb-1">{stats.total}</div>
-					<div class="text-gray-600">Total Characters</div>
+				<div class="bg-[var(--bg-secondary)] rounded-xl p-6 shadow-md border border-[var(--border-primary)]">
+					<div class="text-3xl font-bold text-[var(--accent-primary)] mb-1">{stats.total}</div>
+					<div class="text-[var(--text-secondary)]">Total Characters</div>
 				</div>
-				<div class="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-					<div class="text-3xl font-bold text-green-600 mb-1">{stats.templates}</div>
-					<div class="text-gray-600">Prompt Templates</div>
+				<div class="bg-[var(--bg-secondary)] rounded-xl p-6 shadow-md border border-[var(--border-primary)]">
+					<div class="text-3xl font-bold text-[var(--success)] mb-1">{stats.templates}</div>
+					<div class="text-[var(--text-secondary)]">Prompt Templates</div>
 				</div>
-				<div class="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-					<div class="text-3xl font-bold text-purple-600 mb-1">{stats.presets}</div>
-					<div class="text-gray-600">LLM Presets</div>
+				<div class="bg-[var(--bg-secondary)] rounded-xl p-6 shadow-md border border-[var(--border-primary)]">
+					<div class="text-3xl font-bold text-[var(--accent-secondary)] mb-1">{stats.presets}</div>
+					<div class="text-[var(--text-secondary)]">LLM Presets</div>
 				</div>
 			</div>
 
 			<!-- Upload Section -->
 			<div class="mb-8">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">Add Characters</h2>
+				<h2 class="text-xl font-semibold text-[var(--text-primary)] mb-4">Add Characters</h2>
 
-				<div class="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-					<h3 class="text-lg font-semibold text-gray-700 mb-3">Import Character Cards</h3>
-					<p class="text-sm text-gray-600 mb-4">
+				<div class="bg-[var(--bg-secondary)] rounded-xl p-6 shadow-md border border-[var(--border-primary)]">
+					<h3 class="text-lg font-semibold text-[var(--text-primary)] mb-3">Import Character Cards</h3>
+					<p class="text-sm text-[var(--text-secondary)] mb-4">
 						Upload PNG character cards (v2 format). You can upload multiple files at once.
 					</p>
 
 					<label
-						class="block w-full p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition cursor-pointer text-center"
+						class="block w-full p-8 border-2 border-dashed border-[var(--border-secondary)] rounded-lg hover:border-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition cursor-pointer text-center"
 					>
 						<svg
-							class="w-12 h-12 mx-auto mb-4 text-gray-400"
+							class="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -167,8 +167,8 @@
 								d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
 							/>
 						</svg>
-						<p class="text-gray-700 font-medium mb-1">Click to upload or drag and drop</p>
-						<p class="text-sm text-gray-500">PNG character cards</p>
+						<p class="text-[var(--text-primary)] font-medium mb-1">Click to upload or drag and drop</p>
+						<p class="text-sm text-[var(--text-muted)]">PNG character cards</p>
 						<input
 							type="file"
 							accept=".png"
@@ -179,16 +179,16 @@
 					</label>
 
 					<!-- Import Options -->
-					<div class="mt-4 pt-4 border-t border-gray-200">
-						<label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+					<div class="mt-4 pt-4 border-t border-[var(--border-primary)]">
+						<label class="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
 							<input
 								type="checkbox"
 								bind:checked={importSystemPrompts}
-								class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+								class="w-4 h-4 text-[var(--accent-primary)] bg-[var(--bg-tertiary)] border-[var(--border-secondary)] rounded focus:ring-[var(--accent-primary)]"
 							/>
 							<span>Import system prompts as templates</span>
 							<svg
-								class="w-4 h-4 text-gray-400"
+								class="w-4 h-4 text-[var(--text-muted)]"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -208,7 +208,7 @@
 
 			<!-- Characters Grid -->
 			<div class="mb-4">
-				<h2 class="text-xl font-semibold text-gray-900 mb-4">
+				<h2 class="text-xl font-semibold text-[var(--text-primary)] mb-4">
 					Your Characters ({stats.total})
 				</h2>
 			</div>
@@ -216,14 +216,14 @@
 			{#if loading}
 				<div class="text-center py-16">
 					<div
-						class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+						class="w-16 h-16 border-4 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4"
 					></div>
-					<p class="text-gray-600">Loading characters...</p>
+					<p class="text-[var(--text-secondary)]">Loading characters...</p>
 				</div>
 			{:else if characters.length === 0}
-				<div class="text-center py-16 bg-white rounded-lg border border-gray-200">
+				<div class="text-center py-16 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-primary)]">
 					<svg
-						class="w-16 h-16 mx-auto mb-4 text-gray-400"
+						class="w-16 h-16 mx-auto mb-4 text-[var(--text-muted)]"
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"
@@ -235,8 +235,8 @@
 							d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
 						/>
 					</svg>
-					<p class="text-gray-700 font-semibold mb-1">No characters yet</p>
-					<p class="text-gray-500 text-sm">Upload some character cards to get started!</p>
+					<p class="text-[var(--text-primary)] font-semibold mb-1">No characters yet</p>
+					<p class="text-[var(--text-muted)] text-sm">Upload some character cards to get started!</p>
 				</div>
 			{:else}
 				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -250,7 +250,7 @@
 							tabindex="0"
 						>
 							<div
-								class="aspect-[3/4] rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow bg-gray-200"
+								class="aspect-[3/4] rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow bg-[var(--bg-tertiary)]"
 							>
 								<!-- Character Image -->
 								{#if character.imageData}
@@ -261,9 +261,9 @@
 									/>
 								{:else}
 									<div
-										class="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center"
+										class="w-full h-full bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center"
 									>
-										<svg class="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+										<svg class="w-16 h-16 text-[var(--text-muted)]" fill="currentColor" viewBox="0 0 20 20">
 											<path
 												fill-rule="evenodd"
 												d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
@@ -292,7 +292,7 @@
 									<button
 										onclick={(e) => handleDelete(character.id, character.name, e)}
 										disabled={deletingCharacterId === character.id}
-										class="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50"
+										class="absolute top-2 left-2 bg-[var(--error)] hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50"
 										aria-label="Delete character"
 									>
 										{#if deletingCharacterId === character.id}

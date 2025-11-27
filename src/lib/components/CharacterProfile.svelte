@@ -108,10 +108,10 @@
 		aria-modal="true"
 	>
 		<div
-			class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-gray-200 flex flex-col"
+			class="bg-[var(--bg-secondary)] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-[var(--border-primary)] flex flex-col"
 		>
 			<!-- Header with Image -->
-			<div class="relative h-64 bg-gray-200 flex-shrink-0">
+			<div class="relative h-64 bg-[var(--bg-tertiary)] flex-shrink-0">
 				{#if imagePreview || character.imageData}
 					<img
 						src={imagePreview || character.imageData}
@@ -119,7 +119,7 @@
 						class="w-full h-full object-cover"
 					/>
 				{:else}
-					<div class="w-full h-full flex items-center justify-center text-gray-400">
+					<div class="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
 						<svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
 								stroke-linecap="round"
@@ -149,14 +149,14 @@
 			<!-- Content -->
 			<div class="flex-1 overflow-y-auto">
 				<!-- Title & Tags -->
-				<div class="p-6 border-b border-gray-200">
-					<h2 class="text-3xl font-bold text-gray-900 mb-3">{character.name}</h2>
+				<div class="p-6 border-b border-[var(--border-primary)]">
+					<h2 class="text-3xl font-bold text-[var(--text-primary)] mb-3">{character.name}</h2>
 
 					{#if tags && tags.length > 0}
 						<div class="flex flex-wrap gap-2">
 							{#each tags as tag}
 								<span
-									class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+									class="px-3 py-1 bg-[var(--accent-secondary)]/20 text-[var(--accent-secondary)] rounded-full text-sm font-medium"
 								>
 									{tag}
 								</span>
@@ -166,29 +166,29 @@
 				</div>
 
 				<!-- Tabs -->
-				<div class="border-b border-gray-200">
+				<div class="border-b border-[var(--border-primary)]">
 					<div class="flex px-6">
 						<button
 							onclick={() => (activeTab = 'image')}
 							class="flex-1 py-3 font-medium transition {activeTab === 'image'
-								? 'text-purple-600 border-b-2 border-purple-600'
-								: 'text-gray-600 hover:text-gray-900'}"
+								? 'text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]'
+								: 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}"
 						>
 							Image
 						</button>
 						<button
 							onclick={() => (activeTab = 'overview')}
 							class="flex-1 py-3 font-medium transition {activeTab === 'overview'
-								? 'text-purple-600 border-b-2 border-purple-600'
-								: 'text-gray-600 hover:text-gray-900'}"
+								? 'text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]'
+								: 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}"
 						>
 							Overview
 						</button>
 						<button
 							onclick={() => (activeTab = 'messages')}
 							class="flex-1 py-3 font-medium transition {activeTab === 'messages'
-								? 'text-purple-600 border-b-2 border-purple-600'
-								: 'text-gray-600 hover:text-gray-900'}"
+								? 'text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]'
+								: 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}"
 						>
 							Messages
 						</button>
@@ -200,32 +200,32 @@
 					{#if activeTab === 'overview'}
 						<!-- Overview Tab -->
 						<div class="space-y-4">
-							<h3 class="text-xl font-semibold text-gray-900 mb-4">Character Overview</h3>
+							<h3 class="text-xl font-semibold text-[var(--text-primary)] mb-4">Character Overview</h3>
 
 							<!-- Description (always visible) -->
 							{#if character.description}
 								<div>
-									<h4 class="text-sm font-medium text-gray-700 mb-2">Description</h4>
-									<div class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+									<h4 class="text-sm font-medium text-[var(--text-secondary)] mb-2">Description</h4>
+									<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
 										{character.description}
 									</div>
 								</div>
 							{:else if data.description}
 								<div>
-									<h4 class="text-sm font-medium text-gray-700 mb-2">Description</h4>
-									<div class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+									<h4 class="text-sm font-medium text-[var(--text-secondary)] mb-2">Description</h4>
+									<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
 										{data.description}
 									</div>
 								</div>
 							{:else}
-								<p class="text-gray-500 italic">No description available</p>
+								<p class="text-[var(--text-muted)] italic">No description available</p>
 							{/if}
 
 							<!-- Scenario (always visible) -->
 							{#if data.scenario}
 								<div class="mt-6">
-									<h4 class="text-sm font-medium text-gray-700 mb-2">Scenario</h4>
-									<div class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+									<h4 class="text-sm font-medium text-[var(--text-secondary)] mb-2">Scenario</h4>
+									<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
 										{data.scenario}
 									</div>
 								</div>
@@ -236,11 +236,11 @@
 								<div class="mt-6">
 									<button
 										onclick={() => (personalityExpanded = !personalityExpanded)}
-										class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
+										class="w-full flex items-center justify-between p-4 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] rounded-lg border border-[var(--border-primary)] transition"
 									>
-										<h4 class="text-sm font-semibold text-gray-900">Personality</h4>
+										<h4 class="text-sm font-semibold text-[var(--text-primary)]">Personality</h4>
 										<svg
-											class="w-5 h-5 text-gray-600 transition-transform {personalityExpanded
+											class="w-5 h-5 text-[var(--text-secondary)] transition-transform {personalityExpanded
 												? 'rotate-180'
 												: ''}"
 											fill="none"
@@ -256,8 +256,8 @@
 										</svg>
 									</button>
 									{#if personalityExpanded}
-										<div class="mt-2 p-4 bg-white border border-gray-200 rounded-lg">
-											<div class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+										<div class="mt-2 p-4 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg">
+											<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
 												{data.personality}
 											</div>
 										</div>
@@ -270,11 +270,11 @@
 								<div class="mt-6">
 									<button
 										onclick={() => (creatorNotesExpanded = !creatorNotesExpanded)}
-										class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
+										class="w-full flex items-center justify-between p-4 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] rounded-lg border border-[var(--border-primary)] transition"
 									>
-										<h4 class="text-sm font-semibold text-gray-900">Creator Notes</h4>
+										<h4 class="text-sm font-semibold text-[var(--text-primary)]">Creator Notes</h4>
 										<svg
-											class="w-5 h-5 text-gray-600 transition-transform {creatorNotesExpanded
+											class="w-5 h-5 text-[var(--text-secondary)] transition-transform {creatorNotesExpanded
 												? 'rotate-180'
 												: ''}"
 											fill="none"
@@ -290,8 +290,8 @@
 										</svg>
 									</button>
 									{#if creatorNotesExpanded}
-										<div class="mt-2 p-4 bg-white border border-gray-200 rounded-lg">
-											<div class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+										<div class="mt-2 p-4 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg">
+											<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
 												{data.creator_notes}
 											</div>
 										</div>
@@ -304,11 +304,11 @@
 								<div class="mt-6">
 									<button
 										onclick={() => (metadataExpanded = !metadataExpanded)}
-										class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
+										class="w-full flex items-center justify-between p-4 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] rounded-lg border border-[var(--border-primary)] transition"
 									>
-										<h4 class="text-sm font-semibold text-gray-900">Metadata</h4>
+										<h4 class="text-sm font-semibold text-[var(--text-primary)]">Metadata</h4>
 										<svg
-											class="w-5 h-5 text-gray-600 transition-transform {metadataExpanded
+											class="w-5 h-5 text-[var(--text-secondary)] transition-transform {metadataExpanded
 												? 'rotate-180'
 												: ''}"
 											fill="none"
@@ -324,17 +324,17 @@
 										</svg>
 									</button>
 									{#if metadataExpanded}
-										<div class="mt-2 p-4 bg-white border border-gray-200 rounded-lg space-y-3">
+										<div class="mt-2 p-4 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg space-y-3">
 											{#if data.creator}
 												<div>
-													<span class="text-sm font-medium text-gray-700">Creator:</span>
-													<span class="ml-2 text-sm text-gray-600">{data.creator}</span>
+													<span class="text-sm font-medium text-[var(--text-secondary)]">Creator:</span>
+													<span class="ml-2 text-sm text-[var(--text-primary)]">{data.creator}</span>
 												</div>
 											{/if}
 											{#if data.character_version}
 												<div>
-													<span class="text-sm font-medium text-gray-700">Version:</span>
-													<span class="ml-2 text-sm text-gray-600"
+													<span class="text-sm font-medium text-[var(--text-secondary)]">Version:</span>
+													<span class="ml-2 text-sm text-[var(--text-primary)]"
 														>{data.character_version}</span
 													>
 												</div>
@@ -347,20 +347,20 @@
 					{:else if activeTab === 'messages'}
 						<!-- Messages Tab -->
 						<div class="space-y-4">
-							<h3 class="text-xl font-semibold text-gray-900 mb-4">Character Messages</h3>
+							<h3 class="text-xl font-semibold text-[var(--text-primary)] mb-4">Character Messages</h3>
 
 							<!-- First Message (always visible) -->
 							{#if data.first_mes}
 								<div>
-									<h4 class="text-sm font-medium text-gray-700 mb-2">First Message</h4>
+									<h4 class="text-sm font-medium text-[var(--text-secondary)] mb-2">First Message</h4>
 									<div
-										class="text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-200"
+										class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed bg-[var(--bg-tertiary)] p-4 rounded-lg border border-[var(--border-primary)]"
 									>
 										{data.first_mes}
 									</div>
 								</div>
 							{:else}
-								<p class="text-gray-500 italic">No first message available</p>
+								<p class="text-[var(--text-muted)] italic">No first message available</p>
 							{/if}
 
 							<!-- Collapsible: Message Example -->
@@ -368,11 +368,11 @@
 								<div class="mt-6">
 									<button
 										onclick={() => (mesExampleExpanded = !mesExampleExpanded)}
-										class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
+										class="w-full flex items-center justify-between p-4 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] rounded-lg border border-[var(--border-primary)] transition"
 									>
-										<h4 class="text-sm font-semibold text-gray-900">Message Example</h4>
+										<h4 class="text-sm font-semibold text-[var(--text-primary)]">Message Example</h4>
 										<svg
-											class="w-5 h-5 text-gray-600 transition-transform {mesExampleExpanded
+											class="w-5 h-5 text-[var(--text-secondary)] transition-transform {mesExampleExpanded
 												? 'rotate-180'
 												: ''}"
 											fill="none"
@@ -388,8 +388,8 @@
 										</svg>
 									</button>
 									{#if mesExampleExpanded}
-										<div class="mt-2 p-4 bg-white border border-gray-200 rounded-lg">
-											<div class="text-gray-700 whitespace-pre-wrap leading-relaxed font-mono text-sm">
+										<div class="mt-2 p-4 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg">
+											<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed font-mono text-sm">
 												{data.mes_example}
 											</div>
 										</div>
@@ -402,16 +402,16 @@
 								<div class="mt-6">
 									<button
 										onclick={() => (alternateGreetingsExpanded = !alternateGreetingsExpanded)}
-										class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
+										class="w-full flex items-center justify-between p-4 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] rounded-lg border border-[var(--border-primary)] transition"
 									>
 										<div class="flex items-center gap-2">
-											<h4 class="text-sm font-semibold text-gray-900">Alternate Greetings</h4>
-											<span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full"
+											<h4 class="text-sm font-semibold text-[var(--text-primary)]">Alternate Greetings</h4>
+											<span class="text-xs bg-[var(--accent-secondary)]/20 text-[var(--accent-secondary)] px-2 py-0.5 rounded-full"
 												>{data.alternate_greetings.length}</span
 											>
 										</div>
 										<svg
-											class="w-5 h-5 text-gray-600 transition-transform {alternateGreetingsExpanded
+											class="w-5 h-5 text-[var(--text-secondary)] transition-transform {alternateGreetingsExpanded
 												? 'rotate-180'
 												: ''}"
 											fill="none"
@@ -429,13 +429,13 @@
 									{#if alternateGreetingsExpanded}
 										<div class="mt-2 space-y-3">
 											{#each data.alternate_greetings as greeting, index}
-												<div class="p-4 bg-white border border-gray-200 rounded-lg">
+												<div class="p-4 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg">
 													<div class="flex items-center gap-2 mb-2">
-														<span class="text-xs font-medium text-gray-500"
+														<span class="text-xs font-medium text-[var(--text-muted)]"
 															>Greeting {index + 2}</span
 														>
 													</div>
-													<div class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+													<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
 														{greeting}
 													</div>
 												</div>
@@ -451,14 +451,14 @@
 							<!-- Character Portrait Section -->
 							<div class="space-y-4">
 								<div class="flex items-center justify-between">
-									<h3 class="text-lg font-semibold text-gray-900">Character Portrait</h3>
+									<h3 class="text-lg font-semibold text-[var(--text-primary)]">Character Portrait</h3>
 								</div>
 
 								<div class="flex items-start gap-4">
 									<!-- Current Image Preview -->
 									<div class="flex-shrink-0">
 										<div
-											class="w-32 h-32 rounded-xl overflow-hidden bg-gray-200 border-2 border-gray-300"
+											class="w-32 h-32 rounded-xl overflow-hidden bg-[var(--bg-tertiary)] border-2 border-[var(--border-primary)]"
 										>
 											<img
 												src={imagePreview || character.imageData || ''}
@@ -470,11 +470,11 @@
 
 									<!-- Upload Button -->
 									<div class="flex-1">
-										<p class="text-sm text-gray-600 mb-3">
+										<p class="text-sm text-[var(--text-secondary)] mb-3">
 											Change your character's portrait image by uploading a new file.
 										</p>
 										<label
-											class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-medium rounded-xl cursor-pointer transition-colors"
+											class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] hover:opacity-90 text-white font-medium rounded-xl cursor-pointer transition-colors"
 										>
 											<input
 												type="file"
@@ -511,7 +511,7 @@
 
 							{#if error}
 								<div
-									class="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm"
+									class="bg-[var(--error)]/10 border border-[var(--error)]/30 rounded-xl p-4 text-[var(--error)] text-sm"
 								>
 									{error}
 								</div>
@@ -519,7 +519,7 @@
 
 							{#if success}
 								<div
-									class="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 text-sm"
+									class="bg-[var(--success)]/10 border border-[var(--success)]/30 rounded-xl p-4 text-[var(--success)] text-sm"
 								>
 									{success}
 								</div>

@@ -71,12 +71,12 @@
 	<button
 		type="button"
 		onclick={() => (isOpen = !isOpen)}
-		class="w-full px-4 py-2 text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+		class="w-full px-4 py-2 text-left bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl hover:border-[var(--accent-primary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition"
 	>
 		<div class="flex items-center justify-between">
-			<span class="text-sm text-gray-900">{getModelName(selectedModel)}</span>
+			<span class="text-sm text-[var(--text-primary)]">{getModelName(selectedModel)}</span>
 			<svg
-				class="w-5 h-5 text-gray-400 transition-transform {isOpen ? 'rotate-180' : ''}"
+				class="w-5 h-5 text-[var(--text-muted)] transition-transform {isOpen ? 'rotate-180' : ''}"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
@@ -89,15 +89,15 @@
 	<!-- Dropdown -->
 	{#if isOpen}
 		<div
-			class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-96 overflow-hidden"
+			class="absolute z-10 w-full mt-1 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-lg max-h-96 overflow-hidden"
 		>
 			<!-- Search Input -->
-			<div class="p-3 border-b border-gray-200">
+			<div class="p-3 border-b border-[var(--border-primary)]">
 				<input
 					type="text"
 					bind:value={searchQuery}
 					placeholder="Search models..."
-					class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					class="w-full px-3 py-2 text-sm bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 					autofocus
 				/>
 			</div>
@@ -105,34 +105,34 @@
 			<!-- Models List -->
 			<div class="overflow-y-auto max-h-80">
 				{#if loading}
-					<div class="p-4 text-center text-gray-500">Loading models...</div>
+					<div class="p-4 text-center text-[var(--text-muted)]">Loading models...</div>
 				{:else if filteredModels.length === 0}
-					<div class="p-4 text-center text-gray-500">No models found</div>
+					<div class="p-4 text-center text-[var(--text-muted)]">No models found</div>
 				{:else}
 					{#each filteredModels as model (model.id)}
 						<button
 							type="button"
 							onclick={() => selectModel(model.id)}
-							class="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors {selectedModel ===
+							class="w-full px-4 py-3 text-left hover:bg-[var(--bg-tertiary)] border-b border-[var(--border-primary)] last:border-b-0 transition-colors {selectedModel ===
 							model.id
-								? 'bg-blue-50'
+								? 'bg-[var(--accent-primary)]/10'
 								: ''}"
 						>
 							<div class="flex items-start justify-between">
 								<div class="flex-1 min-w-0">
-									<div class="text-sm font-medium text-gray-900 truncate">
+									<div class="text-sm font-medium text-[var(--text-primary)] truncate">
 										{model.name}
 									</div>
-									<div class="text-xs text-gray-500 mt-1 line-clamp-2">
+									<div class="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">
 										{model.description || model.id}
 									</div>
-									<div class="flex items-center gap-3 mt-1 text-xs text-gray-400">
+									<div class="flex items-center gap-3 mt-1 text-xs text-[var(--text-muted)]">
 										<span>Context: {model.contextLength.toLocaleString()}</span>
 									</div>
 								</div>
 								{#if selectedModel === model.id}
 									<svg
-										class="w-5 h-5 text-blue-600 flex-shrink-0 ml-2"
+										class="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 ml-2"
 										fill="currentColor"
 										viewBox="0 0 20 20"
 									>

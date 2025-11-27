@@ -207,12 +207,12 @@
 </svelte:head>
 
 <MainLayout user={data.user} currentPath="/prompts">
-	<div class="h-full overflow-y-auto" bind:this={containerRef}>
+	<div class="h-full overflow-y-auto bg-[var(--bg-primary)]" bind:this={containerRef}>
 		<div class="max-w-7xl mx-auto px-8 py-8">
 			<!-- Header -->
 			<div class="mb-6">
-				<h1 class="text-3xl font-bold text-gray-900 mb-2">Prompt Templates</h1>
-				<p class="text-gray-600">
+				<h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">Prompt Templates</h1>
+				<p class="text-[var(--text-secondary)]">
 					Create and manage prompt templates with variable substitution for AI interactions
 				</p>
 			</div>
@@ -221,8 +221,8 @@
 			{#if message}
 				<div
 					class="mb-6 p-4 rounded-xl border {message.type === 'success'
-						? 'bg-green-50 border-green-200 text-green-700'
-						: 'bg-red-50 border-red-200 text-red-700'}"
+						? 'bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]'
+						: 'bg-[var(--error)]/10 border-[var(--error)]/30 text-[var(--error)]'}"
 				>
 					{message.text}
 				</div>
@@ -231,19 +231,19 @@
 			{#if loading}
 				<!-- Loading Skeleton -->
 				<div class="animate-pulse space-y-4">
-					<div class="h-8 bg-gray-200 rounded w-1/4"></div>
-					<div class="h-64 bg-gray-200 rounded"></div>
+					<div class="h-8 bg-[var(--bg-tertiary)] rounded w-1/4"></div>
+					<div class="h-64 bg-[var(--bg-tertiary)] rounded"></div>
 				</div>
 			{:else}
 				<div class="grid grid-cols-12 gap-6">
 					<!-- Left Sidebar: Template List -->
 					<div class="col-span-3">
-						<div class="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+						<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] p-4">
 							<div class="flex items-center justify-between mb-4">
-								<h2 class="text-lg font-semibold text-gray-900">Templates</h2>
+								<h2 class="text-lg font-semibold text-[var(--text-primary)]">Templates</h2>
 								<button
 									onclick={startCreating}
-									class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+									class="p-2 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-lg transition"
 									title="New Template"
 								>
 									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,8 +263,8 @@
 										onclick={() => selectTemplate(template)}
 										class="w-full text-left p-3 rounded-lg transition {selectedTemplate?.id ===
 										template.id
-											? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-											: 'hover:bg-gray-100 text-gray-700'}"
+											? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white'
+											: 'hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)]'}"
 									>
 										<div class="flex items-center justify-between">
 											<span class="font-medium truncate">{template.name}</span>
@@ -273,7 +273,7 @@
 											<p
 												class="text-xs mt-1 truncate {selectedTemplate?.id === template.id
 													? 'text-white/80'
-													: 'text-gray-500'}"
+													: 'text-[var(--text-muted)]'}"
 											>
 												{template.description}
 											</p>
@@ -287,43 +287,43 @@
 					<!-- Main Content: Template Editor -->
 					<div class="col-span-9">
 						{#if selectedTemplate || isCreating}
-							<div class="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+							<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] p-6">
 								<div class="mb-6">
-									<h2 class="text-2xl font-bold text-gray-900 mb-4">
+									<h2 class="text-2xl font-bold text-[var(--text-primary)] mb-4">
 										{isCreating ? 'New Template' : 'Edit Template'}
 									</h2>
 
 									<!-- Template Name -->
 									<div class="mb-4">
-										<label class="block text-sm font-medium text-gray-700 mb-2"
+										<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2"
 											>Template Name</label
 										>
 										<input
 											type="text"
 											bind:value={formName}
-											class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+											class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 											placeholder="e.g., Character Roleplay"
 										/>
 									</div>
 
 									<!-- Description -->
 									<div class="mb-4">
-										<label class="block text-sm font-medium text-gray-700 mb-2"
+										<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2"
 											>Description (optional)</label
 										>
 										<input
 											type="text"
 											bind:value={formDescription}
-											class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+											class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 											placeholder="Brief description of this template"
 										/>
 									</div>
 
 									<!-- Variable Helper -->
-									<div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+									<div class="mb-4 p-4 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-lg">
 										<div class="flex items-start gap-2 mb-2">
 											<svg
-												class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+												class="w-5 h-5 text-[var(--accent-primary)] mt-0.5 flex-shrink-0"
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
@@ -336,21 +336,21 @@
 												/>
 											</svg>
 											<div class="flex-1">
-												<h4 class="text-sm font-semibold text-blue-900 mb-2">
+												<h4 class="text-sm font-semibold text-[var(--accent-primary)] mb-2">
 													Available Variables
 												</h4>
 												<div class="flex flex-wrap gap-2">
 													{#each VARIABLES as variable}
 														<button
 															onclick={() => insertVariable(variable.key)}
-															class="px-2 py-1 bg-white border border-blue-300 rounded text-xs font-mono text-blue-700 hover:bg-blue-100 transition"
+															class="px-2 py-1 bg-[var(--bg-secondary)] border border-[var(--accent-primary)]/30 rounded text-xs font-mono text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/20 transition"
 															title={variable.description}
 														>
 															{variable.key}
 														</button>
 													{/each}
 												</div>
-												<p class="text-xs text-blue-700 mt-2">
+												<p class="text-xs text-[var(--accent-primary)]/80 mt-2">
 													Click a variable to insert it at cursor position
 												</p>
 											</div>
@@ -360,16 +360,16 @@
 									<!-- Template Content -->
 									<div class="mb-4">
 										<div class="flex items-center justify-between mb-2">
-											<label class="block text-sm font-medium text-gray-700">Template Content</label
+											<label class="block text-sm font-medium text-[var(--text-secondary)]">Template Content</label
 											>
-											<div class="text-xs text-gray-500">
+											<div class="text-xs text-[var(--text-muted)]">
 												{getCharCount()} characters / ~{getTokenEstimate()} tokens
 											</div>
 										</div>
 										<textarea
 											bind:value={formContent}
 											rows="16"
-											class="w-full px-4 py-3 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+											class="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-none"
 											placeholder="Enter your prompt template here. Click variable buttons above to insert them."
 										></textarea>
 									</div>
@@ -379,7 +379,7 @@
 										<button
 											onclick={saveTemplate}
 											disabled={saving}
-											class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-xl transition"
+											class="px-6 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] hover:opacity-90 disabled:opacity-50 text-white font-medium rounded-xl transition"
 										>
 											{#if saving}
 												<span class="flex items-center gap-2">
@@ -397,12 +397,12 @@
 											<button
 												onclick={deleteTemplate}
 												disabled={deleting}
-												class="px-4 py-2 text-red-600 hover:bg-red-50 disabled:text-red-400 font-medium rounded-xl transition"
+												class="px-4 py-2 text-[var(--error)] hover:bg-[var(--error)]/10 disabled:opacity-50 font-medium rounded-xl transition"
 											>
 												{#if deleting}
 													<span class="flex items-center gap-2">
 														<div
-															class="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"
+															class="w-4 h-4 border-2 border-[var(--error)] border-t-transparent rounded-full animate-spin"
 														></div>
 														Deleting...
 													</span>
@@ -416,9 +416,9 @@
 							</div>
 						{:else}
 							<!-- No Template Selected -->
-							<div class="bg-white rounded-xl shadow-md border border-gray-200 p-12 text-center">
+							<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] p-12 text-center">
 								<svg
-									class="w-16 h-16 mx-auto mb-4 text-gray-400"
+									class="w-16 h-16 mx-auto mb-4 text-[var(--text-muted)]"
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
@@ -430,13 +430,13 @@
 										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 									/>
 								</svg>
-								<h3 class="text-xl font-semibold text-gray-900 mb-2">No Template Selected</h3>
-								<p class="text-gray-600 mb-6">
+								<h3 class="text-xl font-semibold text-[var(--text-primary)] mb-2">No Template Selected</h3>
+								<p class="text-[var(--text-secondary)] mb-6">
 									Select a template from the sidebar or create a new one
 								</p>
 								<button
 									onclick={startCreating}
-									class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl transition"
+									class="px-6 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] hover:opacity-90 text-white font-medium rounded-xl transition"
 								>
 									Create New Template
 								</button>

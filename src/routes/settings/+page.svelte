@@ -169,20 +169,20 @@
 </svelte:head>
 
 <MainLayout user={data.user} currentPath="/settings">
-	<div bind:this={containerRef} class="h-full overflow-y-auto bg-gray-50">
-		<div class="max-w-5xl mx-auto px-8 py-12">
+	<div bind:this={containerRef} class="h-full overflow-y-auto bg-[var(--bg-primary)]">
+		<div class="max-w-5xl mx-auto px-8 py-8">
 			<!-- Header -->
-			<div class="mb-8">
-				<h1 class="text-4xl font-bold text-gray-900 mb-2">LLM Settings</h1>
-				<p class="text-gray-600">
+			<div class="mb-6">
+				<h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">LLM Settings</h1>
+				<p class="text-[var(--text-secondary)]">
 					Configure your language model preferences for character interactions
 				</p>
 			</div>
 
 			<!-- Presets Section -->
 			{#if presets.length > 0}
-				<div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-					<label for="preset-selector" class="block text-sm font-medium text-gray-700 mb-2">
+				<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] p-6 mb-6">
+					<label for="preset-selector" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
 						Load Preset
 					</label>
 					<div class="flex items-center gap-3">
@@ -195,7 +195,7 @@
 									if (preset) loadPresetSettings(preset);
 								}
 							}}
-							class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+							class="flex-1 px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 						>
 							<option value="">Select a preset...</option>
 							{#each presets as preset}
@@ -214,12 +214,12 @@
 								}
 							}}
 							disabled={deletingPresetId !== null}
-							class="px-4 py-3 text-red-600 hover:bg-red-50 disabled:text-red-300 rounded-lg transition border border-red-200 hover:border-red-300"
+							class="px-4 py-3 text-[var(--error)] hover:bg-[var(--error)]/10 disabled:opacity-50 rounded-xl transition border border-[var(--error)]/30 hover:border-[var(--error)]/50"
 							title="Delete selected preset"
 						>
 							{#if deletingPresetId !== null}
 								<div
-									class="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"
+									class="w-5 h-5 border-2 border-[var(--error)] border-t-transparent rounded-full animate-spin"
 								></div>
 							{:else}
 								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,48 +233,48 @@
 							{/if}
 						</button>
 					</div>
-					<p class="text-xs text-gray-500 mt-2">
+					<p class="text-xs text-[var(--text-muted)] mt-2">
 						Select a preset to load its settings
 					</p>
 				</div>
 			{/if}
 
-			<div class="bg-white rounded-lg shadow-sm overflow-hidden">
+			<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
 				{#if loading}
 					<!-- Loading State with Same Layout -->
 					<div class="p-6">
 						<div class="space-y-6">
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-2">Provider</label>
-								<div class="w-full h-10 bg-gray-200 rounded-md animate-pulse"></div>
+								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Provider</label>
+								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
-								<div class="w-full h-10 bg-gray-200 rounded-md animate-pulse"></div>
+								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Model</label>
+								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-2">Temperature: 0.7</label>
-								<div class="w-full h-2 bg-gray-200 rounded animate-pulse"></div>
+								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Temperature: 0.7</label>
+								<div class="w-full h-2 bg-[var(--bg-tertiary)] rounded animate-pulse"></div>
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-2">Max Tokens</label>
-								<div class="w-full h-10 bg-gray-200 rounded-md animate-pulse"></div>
+								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Max Tokens</label>
+								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-2">Context Window</label>
-								<div class="w-full h-10 bg-gray-200 rounded-md animate-pulse"></div>
+								<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Context Window</label>
+								<div class="w-full h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse"></div>
 							</div>
 						</div>
 						<div class="mt-6 flex items-center gap-3">
 							<button
 								disabled
-								class="px-8 py-3 bg-gradient-to-r from-blue-300 to-purple-300 text-white font-semibold rounded-lg shadow-lg cursor-not-allowed"
+								class="px-8 py-3 bg-gradient-to-r from-[var(--accent-primary)]/50 to-[var(--accent-secondary)]/50 text-white font-semibold rounded-xl shadow-lg cursor-not-allowed"
 							>
 								Save Settings
 							</button>
 							<button
 								disabled
-								class="px-8 py-3 bg-gray-300 text-white rounded-lg font-semibold shadow-lg cursor-not-allowed"
+								class="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-muted)] rounded-xl font-semibold shadow-lg cursor-not-allowed"
 							>
 								Reload
 							</button>
@@ -291,9 +291,9 @@
 						<!-- Success/Error Message -->
 						{#if message}
 							<div
-								class="mb-6 p-4 rounded-lg {message.type === 'success'
-									? 'bg-green-50 border border-green-200 text-green-700'
-									: 'bg-red-50 border border-red-200 text-red-700'}"
+								class="mb-6 p-4 rounded-xl border {message.type === 'success'
+									? 'bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]'
+									: 'bg-[var(--error)]/10 border-[var(--error)]/30 text-[var(--error)]'}"
 							>
 								{message.text}
 							</div>
@@ -301,10 +301,10 @@
 
 						<!-- Provider Selection -->
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Provider</label>
+							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Provider</label>
 							<select
 								bind:value={settings.provider}
-								class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+								class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 							>
 								<option value="openrouter">OpenRouter</option>
 								<option value="featherless" disabled>Featherless (Coming Soon)</option>
@@ -313,7 +313,7 @@
 
 						<!-- Model Selection -->
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
+							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Model</label>
 							<ModelSelector
 								selectedModel={settings.model}
 								onSelect={(modelId) => (settings.model = modelId)}
@@ -322,7 +322,7 @@
 
 						<!-- Temperature -->
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">
+							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
 								Temperature: {settings.temperature}
 							</label>
 							<input
@@ -331,52 +331,52 @@
 								min="0"
 								max="2"
 								step="0.1"
-								class="w-full"
+								class="w-full accent-[var(--accent-primary)]"
 							/>
-							<p class="text-xs text-gray-500 mt-1">
+							<p class="text-xs text-[var(--text-muted)] mt-1">
 								Higher values make output more random, lower values more deterministic
 							</p>
 						</div>
 
 						<!-- Max Tokens -->
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Max Tokens</label>
+							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Max Tokens</label>
 							<input
 								type="number"
 								bind:value={settings.maxTokens}
 								min="50"
 								max="4000"
 								step="50"
-								class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+								class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 							/>
-							<p class="text-xs text-gray-500 mt-1">Maximum length of generated responses</p>
+							<p class="text-xs text-[var(--text-muted)] mt-1">Maximum length of generated responses</p>
 						</div>
 
 						<!-- Context Window -->
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Context Window</label>
+							<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Context Window</label>
 							<input
 								type="number"
 								bind:value={settings.contextWindow}
 								min="1000"
 								max="200000"
 								step="1000"
-								class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+								class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 							/>
-							<p class="text-xs text-gray-500 mt-1">Total tokens available for context</p>
+							<p class="text-xs text-[var(--text-muted)] mt-1">Total tokens available for context</p>
 						</div>
 
 						<!-- Advanced Settings -->
-						<details class="border border-gray-200 rounded-lg">
+						<details class="border border-[var(--border-primary)] rounded-xl">
 							<summary
-								class="px-4 py-3 cursor-pointer font-medium text-gray-700 hover:bg-gray-50"
+								class="px-4 py-3 cursor-pointer font-medium text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-xl"
 							>
 								Advanced Settings
 							</summary>
-							<div class="px-4 py-4 space-y-4 border-t border-gray-200">
+							<div class="px-4 py-4 space-y-4 border-t border-[var(--border-primary)]">
 								<!-- Top P -->
 								<div>
-									<label class="block text-sm font-medium text-gray-700 mb-2">
+									<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
 										Top P: {settings.topP}
 									</label>
 									<input
@@ -385,14 +385,14 @@
 										min="0"
 										max="1"
 										step="0.05"
-										class="w-full"
+										class="w-full accent-[var(--accent-primary)]"
 									/>
-									<p class="text-xs text-gray-500 mt-1">Nucleus sampling threshold</p>
+									<p class="text-xs text-[var(--text-muted)] mt-1">Nucleus sampling threshold</p>
 								</div>
 
 								<!-- Frequency Penalty -->
 								<div>
-									<label class="block text-sm font-medium text-gray-700 mb-2">
+									<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
 										Frequency Penalty: {settings.frequencyPenalty}
 									</label>
 									<input
@@ -401,16 +401,16 @@
 										min="0"
 										max="2"
 										step="0.1"
-										class="w-full"
+										class="w-full accent-[var(--accent-primary)]"
 									/>
-									<p class="text-xs text-gray-500 mt-1">
+									<p class="text-xs text-[var(--text-muted)] mt-1">
 										Penalize repeated tokens based on frequency
 									</p>
 								</div>
 
 								<!-- Presence Penalty -->
 								<div>
-									<label class="block text-sm font-medium text-gray-700 mb-2">
+									<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
 										Presence Penalty: {settings.presencePenalty}
 									</label>
 									<input
@@ -419,9 +419,9 @@
 										min="0"
 										max="2"
 										step="0.1"
-										class="w-full"
+										class="w-full accent-[var(--accent-primary)]"
 									/>
-									<p class="text-xs text-gray-500 mt-1">Penalize tokens that appear at all</p>
+									<p class="text-xs text-[var(--text-muted)] mt-1">Penalize tokens that appear at all</p>
 								</div>
 							</div>
 						</details>
@@ -431,7 +431,7 @@
 							<button
 								type="submit"
 								disabled={saving}
-								class="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center gap-2"
+								class="px-8 py-3 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white font-semibold rounded-xl hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center gap-2"
 							>
 								{#if saving}
 									<div
@@ -445,7 +445,7 @@
 							<button
 								type="button"
 								onclick={() => (showSavePresetDialog = true)}
-								class="px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition font-semibold shadow-lg hover:shadow-xl"
+								class="px-8 py-3 bg-[var(--success)] hover:bg-[var(--success)]/80 text-white rounded-xl transition font-semibold shadow-lg hover:shadow-xl"
 							>
 								Save as Preset
 							</button>
@@ -453,7 +453,7 @@
 								type="button"
 								onclick={loadSettings}
 								disabled={loading || saving}
-								class="px-8 py-3 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white rounded-lg transition font-semibold shadow-lg hover:shadow-xl"
+								class="px-8 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] disabled:opacity-50 text-[var(--text-primary)] rounded-xl transition font-semibold shadow-lg hover:shadow-xl border border-[var(--border-primary)]"
 							>
 								Reload
 							</button>
@@ -475,16 +475,16 @@
 				}
 			}}
 		>
-			<div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-				<h3 class="text-xl font-bold text-gray-900 mb-4">Save Preset</h3>
-				<p class="text-sm text-gray-600 mb-4">
+			<div class="bg-[var(--bg-secondary)] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[var(--border-primary)]">
+				<h3 class="text-xl font-bold text-[var(--text-primary)] mb-4">Save Preset</h3>
+				<p class="text-sm text-[var(--text-secondary)] mb-4">
 					Save your current settings as a reusable preset
 				</p>
 				<input
 					type="text"
 					bind:value={presetName}
 					placeholder="Preset name"
-					class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4"
+					class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] mb-4"
 					onkeydown={(e) => {
 						if (e.key === 'Enter') {
 							e.preventDefault();
@@ -498,14 +498,14 @@
 							showSavePresetDialog = false;
 							presetName = '';
 						}}
-						class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+						class="px-4 py-2 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] rounded-xl transition"
 					>
 						Cancel
 					</button>
 					<button
 						onclick={savePreset}
 						disabled={savingPreset || !presetName.trim()}
-						class="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg font-medium transition"
+						class="px-6 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] hover:opacity-90 disabled:opacity-50 text-white rounded-xl font-medium transition"
 					>
 						{#if savingPreset}
 							<div

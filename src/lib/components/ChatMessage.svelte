@@ -86,21 +86,21 @@
 	}
 
 	.chat-message :global(.rp-action) {
-		color: rgb(156 163 175);
+		color: var(--text-muted);
 		font-style: italic;
 	}
 
 	.chat-message.user :global(.rp-action) {
-		color: rgb(219 234 254);
+		color: rgb(199 210 254); /* indigo-200 for contrast on gradient */
 		font-style: italic;
 	}
 
 	.chat-message :global(.rp-dialogue) {
-		color: rgb(59 130 246);
+		color: var(--accent-hover); /* indigo-400 */
 	}
 
 	.chat-message.user :global(.rp-dialogue) {
-		color: rgb(254 249 195);
+		color: rgb(254 240 138); /* yellow-200 for contrast */
 	}
 
 	.chat-message :global(strong) {
@@ -112,7 +112,7 @@
 	}
 
 	.chat-message :global(code) {
-		background: rgba(0, 0, 0, 0.1);
+		background: rgba(255, 255, 255, 0.1);
 		padding: 0.1em 0.3em;
 		border-radius: 0.25em;
 		font-family: monospace;
@@ -124,7 +124,7 @@
 	}
 
 	.chat-message :global(pre) {
-		background: rgba(0, 0, 0, 0.05);
+		background: rgba(0, 0, 0, 0.2);
 		padding: 0.75em;
 		border-radius: 0.5em;
 		overflow-x: auto;
@@ -151,10 +151,10 @@
 	}
 
 	.chat-message :global(blockquote) {
-		border-left: 3px solid rgb(156 163 175);
+		border-left: 3px solid var(--text-muted);
 		padding-left: 0.75em;
 		margin: 0.5em 0;
-		color: rgb(107 114 128);
+		color: var(--text-secondary);
 	}
 
 	.chat-message.user :global(blockquote) {

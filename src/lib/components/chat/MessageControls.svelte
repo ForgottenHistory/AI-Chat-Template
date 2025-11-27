@@ -36,17 +36,17 @@
 	{#if showSwipe}
 		<button
 			onclick={() => onSwipe('left')}
-			class="p-1.5 text-gray-400 hover:text-gray-600 transition"
+			class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
 			title="Previous variant"
 		>
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
 			</svg>
 		</button>
-		<span class="text-xs text-gray-500">{currentIndex + 1} / {swipes.length}</span>
+		<span class="text-xs text-[var(--text-muted)]">{currentIndex + 1} / {swipes.length}</span>
 		<button
 			onclick={() => onSwipe('right')}
-			class="p-1.5 text-gray-400 hover:text-gray-600 transition"
+			class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
 			title="Next variant"
 		>
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@
 	<!-- Edit button (show on hover via parent group) -->
 	<button
 		onclick={onEdit}
-		class="p-1.5 text-gray-400 hover:text-blue-500 transition opacity-0 group-hover:opacity-100"
+		class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition opacity-0 group-hover:opacity-100"
 		title="Edit message"
 	>
 		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
 	<!-- Delete button (show on hover via parent group) -->
 	<button
 		onclick={onDelete}
-		class="p-1.5 text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+		class="p-1.5 text-[var(--text-muted)] hover:text-[var(--error)] transition opacity-0 group-hover:opacity-100"
 		title="Delete this message and all below"
 	>
 		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

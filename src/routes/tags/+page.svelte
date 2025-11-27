@@ -225,73 +225,73 @@
 </svelte:head>
 
 <MainLayout user={data.user} currentPath="/tags">
-	<div bind:this={containerRef} class="h-full overflow-y-auto bg-gray-50">
-		<div class="max-w-5xl mx-auto px-8 py-12">
+	<div bind:this={containerRef} class="h-full overflow-y-auto bg-[var(--bg-primary)]">
+		<div class="max-w-5xl mx-auto px-8 py-8">
 			<!-- Header -->
-			<div class="mb-8">
-				<h1 class="text-4xl font-bold text-gray-900 mb-2">Tag Library</h1>
-				<p class="text-gray-600">
+			<div class="mb-6">
+				<h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">Tag Library</h1>
+				<p class="text-[var(--text-secondary)]">
 					Manage your collection of tags for image generation
 				</p>
 			</div>
 
 			<!-- Tag Library -->
-			<div class="bg-white rounded-lg shadow-sm overflow-hidden">
+			<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
 					<div class="p-6">
 						{#if isLoading}
 							<!-- Loading State with Same Layout -->
-							<div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+							<div class="mb-6 p-4 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-xl">
 								<div class="flex items-center justify-between">
 									<div class="flex items-center gap-2">
-										<div class="w-5 h-5 bg-blue-200 rounded animate-pulse"></div>
-										<span class="font-semibold text-blue-800">Tag Library Tokens:</span>
-										<span class="text-blue-700 font-mono">~0</span>
+										<div class="w-5 h-5 bg-[var(--accent-primary)]/30 rounded animate-pulse"></div>
+										<span class="font-semibold text-[var(--accent-primary)]">Tag Library Tokens:</span>
+										<span class="text-[var(--accent-primary)] font-mono">~0</span>
 									</div>
-									<div class="text-sm text-gray-600">
+									<div class="text-sm text-[var(--text-muted)]">
 										Last saved: Never
 									</div>
 								</div>
 							</div>
 
 							<div class="mb-6 flex flex-wrap gap-3">
-								<button disabled class="px-5 py-2.5 bg-purple-300 text-white rounded-lg text-sm font-medium shadow-md cursor-not-allowed">
+								<button disabled class="px-5 py-2.5 bg-[var(--accent-secondary)]/50 text-white rounded-xl text-sm font-medium shadow-md cursor-not-allowed">
 									Lines → Comma-separated
 								</button>
-								<button disabled class="px-5 py-2.5 bg-blue-300 text-white rounded-lg text-sm font-medium shadow-md cursor-not-allowed">
+								<button disabled class="px-5 py-2.5 bg-[var(--accent-primary)]/50 text-white rounded-xl text-sm font-medium shadow-md cursor-not-allowed">
 									Lowercase
 								</button>
-								<button disabled class="px-5 py-2.5 bg-orange-300 text-white rounded-lg text-sm font-medium shadow-md cursor-not-allowed">
+								<button disabled class="px-5 py-2.5 bg-amber-500/50 text-white rounded-xl text-sm font-medium shadow-md cursor-not-allowed">
 									Remove Duplicates
 								</button>
-								<button disabled class="px-5 py-2.5 bg-green-300 text-white rounded-lg text-sm font-medium shadow-md cursor-not-allowed">
+								<button disabled class="px-5 py-2.5 bg-[var(--success)]/50 text-white rounded-xl text-sm font-medium shadow-md cursor-not-allowed">
 									Sort A-Z
 								</button>
 							</div>
 
-							<div class="w-full h-[600px] px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center">
+							<div class="w-full h-[600px] px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl flex items-center justify-center">
 								<div class="text-center">
-									<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-									<p class="text-gray-600 text-sm">Loading...</p>
+									<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)] mx-auto mb-2"></div>
+									<p class="text-[var(--text-muted)] text-sm">Loading...</p>
 								</div>
 							</div>
 
 							<div class="mt-6 flex items-center gap-3">
-								<button disabled class="px-8 py-3 bg-gradient-to-r from-blue-300 to-purple-300 text-white font-semibold rounded-lg shadow-lg cursor-not-allowed">
+								<button disabled class="px-8 py-3 bg-gradient-to-r from-[var(--accent-primary)]/50 to-[var(--accent-secondary)]/50 text-white font-semibold rounded-xl shadow-lg cursor-not-allowed">
 									Save Settings
 								</button>
-								<button disabled class="px-8 py-3 bg-gray-300 text-white rounded-lg font-semibold shadow-lg cursor-not-allowed">
+								<button disabled class="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-muted)] rounded-xl font-semibold shadow-lg cursor-not-allowed">
 									Reload
 								</button>
 							</div>
 						{:else}
 							<!-- Token Counter -->
 							<div
-								class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg"
+								class="mb-6 p-4 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-xl"
 							>
 								<div class="flex items-center justify-between">
 									<div class="flex items-center gap-2">
 										<svg
-											class="w-5 h-5 text-blue-600"
+											class="w-5 h-5 text-[var(--accent-primary)]"
 											fill="none"
 											stroke="currentColor"
 											viewBox="0 0 24 24"
@@ -303,10 +303,10 @@
 												d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
 											/>
 										</svg>
-										<span class="font-semibold text-blue-800">Tag Library Tokens:</span>
-										<span class="text-blue-700 font-mono">~{calculateTokens().toLocaleString()}</span>
+										<span class="font-semibold text-[var(--accent-primary)]">Tag Library Tokens:</span>
+										<span class="text-[var(--accent-primary)] font-mono">~{calculateTokens().toLocaleString()}</span>
 									</div>
-									<div class="text-sm text-gray-600">
+									<div class="text-sm text-[var(--text-muted)]">
 										Last saved: {formatLastSaved()}
 									</div>
 								</div>
@@ -315,9 +315,9 @@
 							<!-- Message -->
 							{#if message}
 								<div
-									class="mb-6 p-4 rounded-lg {message.type === 'success'
-										? 'bg-green-50 border border-green-200 text-green-700'
-										: 'bg-red-50 border border-red-200 text-red-700'}"
+									class="mb-6 p-4 rounded-xl border {message.type === 'success'
+										? 'bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]'
+										: 'bg-[var(--error)]/10 border-[var(--error)]/30 text-[var(--error)]'}"
 								>
 									{message.text}
 								</div>
@@ -327,28 +327,28 @@
 							<div class="mb-6 flex flex-wrap gap-3">
 								<button
 									onclick={formatToCommaSeparated}
-									class="px-5 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition text-sm font-medium shadow-md hover:shadow-lg"
+									class="px-5 py-2.5 bg-[var(--accent-secondary)] hover:bg-[var(--accent-secondary)]/80 text-white rounded-xl transition text-sm font-medium shadow-md hover:shadow-lg"
 									title="Convert selected lines to comma-separated format"
 								>
 									Lines → Comma-separated
 								</button>
 								<button
 									onclick={convertToLowercase}
-									class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition text-sm font-medium shadow-md hover:shadow-lg"
+									class="px-5 py-2.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80 text-white rounded-xl transition text-sm font-medium shadow-md hover:shadow-lg"
 									title="Convert selected text to lowercase"
 								>
 									Lowercase
 								</button>
 								<button
 									onclick={removeDuplicates}
-									class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition text-sm font-medium shadow-md hover:shadow-lg"
+									class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition text-sm font-medium shadow-md hover:shadow-lg"
 									title="Remove duplicate tags from selected comma-separated list"
 								>
 									Remove Duplicates
 								</button>
 								<button
 									onclick={sortAlphabetically}
-									class="px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition text-sm font-medium shadow-md hover:shadow-lg"
+									class="px-5 py-2.5 bg-[var(--success)] hover:bg-[var(--success)]/80 text-white rounded-xl transition text-sm font-medium shadow-md hover:shadow-lg"
 									title="Sort selected comma-separated tags alphabetically"
 								>
 									Sort A-Z
@@ -362,7 +362,7 @@
 								onselect={handleTextSelection}
 								onmouseup={handleTextSelection}
 								onkeyup={handleTextSelection}
-								class="w-full h-[600px] px-4 py-3 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y font-mono text-sm"
+								class="w-full h-[600px] px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-y font-mono text-sm"
 								placeholder="Enter tags here... Examples:&#10;1girl, blonde hair, blue eyes&#10;fantasy, medieval, armor&#10;smile, happy, outdoors"
 								spellcheck="false"
 							></textarea>
@@ -372,7 +372,7 @@
 								<button
 									onclick={saveTagLibrary}
 									disabled={isSaving}
-									class="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center gap-2"
+									class="px-8 py-3 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white font-semibold rounded-xl hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center gap-2"
 								>
 									{#if isSaving}
 										<div
@@ -386,14 +386,14 @@
 								<button
 									onclick={loadTagLibrary}
 									disabled={isLoading || isSaving}
-									class="px-8 py-3 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white rounded-lg transition font-semibold shadow-lg hover:shadow-xl"
+									class="px-8 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--border-primary)] disabled:opacity-50 text-[var(--text-primary)] rounded-xl transition font-semibold shadow-lg hover:shadow-xl border border-[var(--border-primary)]"
 								>
 									Reload
 								</button>
 								<button
 									onclick={resetToDefault}
 									disabled={isResetting || isSaving}
-									class="px-8 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white rounded-lg transition font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
+									class="px-8 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl transition font-semibold shadow-lg hover:shadow-xl flex items-center gap-2"
 								>
 									{#if isResetting}
 										<div
@@ -408,10 +408,10 @@
 
 							<!-- Help Text -->
 							<div
-								class="mt-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg"
+								class="mt-8 p-6 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 rounded-xl"
 							>
-								<h3 class="font-semibold text-blue-800 mb-3 text-lg">💡 How to use:</h3>
-								<ul class="text-sm text-blue-700 space-y-2 list-disc list-inside">
+								<h3 class="font-semibold text-[var(--accent-primary)] mb-3 text-lg">How to use:</h3>
+								<ul class="text-sm text-[var(--accent-primary)]/80 space-y-2 list-disc list-inside">
 									<li>Select text you want to format</li>
 									<li>Click a formatting button to transform the selected text</li>
 									<li>
@@ -420,7 +420,7 @@
 									<li>Use "Lowercase" to normalize capitalization</li>
 									<li>Use "Remove Duplicates" to clean up repeated tags</li>
 									<li>Use "Sort A-Z" to alphabetically order tags</li>
-									<li>Click "Save Tag Library" when done editing</li>
+									<li>Click "Save Settings" when done editing</li>
 								</ul>
 							</div>
 						{/if}

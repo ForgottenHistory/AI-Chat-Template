@@ -44,10 +44,10 @@
 					class="w-full h-full object-cover"
 				/>
 			{:else}
-				<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600"></div>
+				<div class="w-full h-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)]"></div>
 			{/if}
 			<div
-				class="absolute inset-0 bg-gradient-to-b from-black/20 via-purple-900/30 to-black/70"
+				class="absolute inset-0 bg-gradient-to-b from-black/20 via-[var(--accent-secondary)]/30 to-black/70"
 			></div>
 
 			<!-- Top Right Buttons -->
@@ -111,9 +111,9 @@
 						<!-- Avatar -->
 						<div class="relative flex-shrink-0">
 							<div
-								class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl blur-lg opacity-60"
+								class="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-2xl blur-lg opacity-60"
 							></div>
-							<div class="relative p-1 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl">
+							<div class="relative p-1 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-2xl">
 								{#if character.imageData}
 									<img
 										src={character.imageData}
@@ -122,7 +122,7 @@
 									/>
 								{:else}
 									<div
-										class="w-24 h-32 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-2xl"
+										class="w-24 h-32 rounded-xl bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-2xl"
 									>
 										{character.name.charAt(0).toUpperCase()}
 									</div>
@@ -143,7 +143,7 @@
 {#if showMenu}
 	<div class="fixed inset-0 z-[998]" onclick={() => (showMenu = false)}></div>
 	<div
-		class="fixed bg-white backdrop-blur-md border border-gray-200 rounded-xl shadow-xl py-1 min-w-[180px] z-[999]"
+		class="fixed bg-[var(--bg-secondary)] backdrop-blur-md border border-[var(--border-primary)] rounded-xl shadow-xl py-1 min-w-[180px] z-[999]"
 		style="left: {menuPosition.x}px; top: {menuPosition.y}px;"
 	>
 		<button
@@ -151,7 +151,7 @@
 				showMenu = false;
 				onReset();
 			}}
-			class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-100 transition-all font-medium flex items-center gap-2"
+			class="w-full text-left px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all font-medium flex items-center gap-2"
 		>
 			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
@@ -168,7 +168,7 @@
 				showMenu = false;
 				onBack();
 			}}
-			class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-100 transition-all font-medium flex items-center gap-2"
+			class="w-full text-left px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all font-medium flex items-center gap-2"
 		>
 			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path

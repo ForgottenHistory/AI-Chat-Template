@@ -56,27 +56,27 @@
 	<title>Register | AI Chat</title>
 </svelte:head>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+<div class="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4">
 	<div class="max-w-md w-full space-y-8">
 		<div>
-			<h2 class="text-center text-3xl font-bold text-gray-900">
+			<h2 class="text-center text-3xl font-bold text-[var(--text-primary)]">
 				AI Chat Template
 			</h2>
-			<p class="mt-2 text-center text-sm text-gray-600">
+			<p class="mt-2 text-center text-sm text-[var(--text-secondary)]">
 				Create your account
 			</p>
 		</div>
 
-		<form class="mt-8 space-y-6" onsubmit={(e) => { e.preventDefault(); handleRegister(); }}>
+		<form class="mt-8 space-y-6 bg-[var(--bg-secondary)] p-8 rounded-2xl border border-[var(--border-primary)] shadow-xl" onsubmit={(e) => { e.preventDefault(); handleRegister(); }}>
 			{#if error}
-				<div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+				<div class="bg-[var(--error)]/10 border border-[var(--error)]/30 text-[var(--error)] px-4 py-3 rounded-xl">
 					{error}
 				</div>
 			{/if}
 
 			<div class="space-y-4">
 				<div>
-					<label for="username" class="block text-sm font-medium text-gray-700">
+					<label for="username" class="block text-sm font-medium text-[var(--text-secondary)]">
 						Username
 					</label>
 					<input
@@ -84,12 +84,12 @@
 						type="text"
 						bind:value={username}
 						required
-						class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						class="mt-1 block w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 					/>
 				</div>
 
 				<div>
-					<label for="displayName" class="block text-sm font-medium text-gray-700">
+					<label for="displayName" class="block text-sm font-medium text-[var(--text-secondary)]">
 						Display Name
 					</label>
 					<input
@@ -97,12 +97,12 @@
 						type="text"
 						bind:value={displayName}
 						required
-						class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						class="mt-1 block w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 					/>
 				</div>
 
 				<div>
-					<label for="password" class="block text-sm font-medium text-gray-700">
+					<label for="password" class="block text-sm font-medium text-[var(--text-secondary)]">
 						Password
 					</label>
 					<input
@@ -110,12 +110,12 @@
 						type="password"
 						bind:value={password}
 						required
-						class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						class="mt-1 block w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 					/>
 				</div>
 
 				<div>
-					<label for="confirmPassword" class="block text-sm font-medium text-gray-700">
+					<label for="confirmPassword" class="block text-sm font-medium text-[var(--text-secondary)]">
 						Confirm Password
 					</label>
 					<input
@@ -123,7 +123,7 @@
 						type="password"
 						bind:value={confirmPassword}
 						required
-						class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						class="mt-1 block w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 					/>
 				</div>
 			</div>
@@ -132,14 +132,14 @@
 				<button
 					type="submit"
 					disabled={loading}
-					class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="w-full flex justify-center py-3 px-4 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white rounded-xl font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent-primary)] disabled:opacity-50 disabled:cursor-not-allowed transition"
 				>
 					{loading ? 'Creating account...' : 'Sign up'}
 				</button>
 			</div>
 
 			<div class="text-center">
-				<a href="/login" class="text-sm text-blue-600 hover:text-blue-500">
+				<a href="/login" class="text-sm text-[var(--accent-primary)] hover:text-[var(--accent-secondary)] transition">
 					Already have an account? Sign in
 				</a>
 			</div>

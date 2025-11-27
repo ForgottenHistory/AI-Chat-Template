@@ -354,7 +354,7 @@
 </svelte:head>
 
 <MainLayout user={data.user} currentPath="/chat">
-	<div class="h-full flex flex-col bg-gray-50">
+	<div class="h-full flex flex-col bg-[var(--bg-primary)]">
 		<ChatHeader
 			{character}
 			onReset={resetConversation}
