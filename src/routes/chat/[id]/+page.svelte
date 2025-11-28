@@ -7,6 +7,7 @@
 	import ChatInput from '$lib/components/chat/ChatInput.svelte';
 	import ImageGenerateModal from '$lib/components/chat/ImageGenerateModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 	import {
 		initSocket,
 		joinConversation,
@@ -18,8 +19,15 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Character image visibility
-	let showCharacterImage = $state(true);
+	// Character image visibility (persisted to localStorage)
+	let showCharacterImage = $state(browser ? localStorage.getItem('chatCharacterImageVisible') !== 'false' : true);
+
+	// Persist character image visibility when it changes
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('chatCharacterImageVisible', String(showCharacterImage));
+		}
+	});
 
 	let character = $state<Character | null>(null);
 	let messages = $state<Message[]>([]);

@@ -20,6 +20,34 @@
 	let sidebarCollapsed = $state(false);
 	let characters = $state<Character[]>(getCharactersCache());
 	let activePersona = $state<ActivePersonaInfo | null>(null);
+	let searchQuery = $state('');
+	let isSearching = $state(false);
+	let searchInputRef = $state<HTMLInputElement | null>(null);
+
+	let filteredCharacters = $derived(
+		searchQuery.trim()
+			? characters.filter(c =>
+				c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				(c.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+			)
+			: characters
+	);
+
+	function startSearch() {
+		isSearching = true;
+		setTimeout(() => searchInputRef?.focus(), 0);
+	}
+
+	function endSearch() {
+		if (!searchQuery.trim()) {
+			isSearching = false;
+		}
+	}
+
+	function clearSearch() {
+		searchQuery = '';
+		isSearching = false;
+	}
 
 	onMount(() => {
 		// Load sidebar collapsed state from localStorage
@@ -107,10 +135,47 @@
 		<!-- Characters List -->
 		<div class="flex-1 overflow-y-auto">
 			<div class="p-5">
-				<div class="mb-5 px-4 py-2 rounded-xl bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20">
-					<h2 class="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-wider">
-						Characters ({characters.length})
-					</h2>
+				<!-- Characters Header / Search Toggle -->
+				<div class="mb-4">
+					{#if isSearching}
+						<div class="relative">
+							<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+							</svg>
+							<input
+								bind:this={searchInputRef}
+								type="text"
+								bind:value={searchQuery}
+								onblur={endSearch}
+								onkeydown={(e) => e.key === 'Escape' && clearSearch()}
+								placeholder="Search characters..."
+								class="w-full pl-10 pr-8 py-2 bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent transition"
+							/>
+							<button
+								onmousedown={(e) => e.preventDefault()}
+								onclick={clearSearch}
+								class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+								</svg>
+							</button>
+						</div>
+					{:else}
+						<button
+							onclick={startSearch}
+							class="w-full px-4 py-2 rounded-xl bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/20 hover:border-[var(--accent-primary)]/40 transition-all group cursor-pointer"
+						>
+							<div class="flex items-center justify-between">
+								<h2 class="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-wider">
+									Characters ({characters.length})
+								</h2>
+								<svg class="w-4 h-4 text-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+								</svg>
+							</div>
+						</button>
+					{/if}
 				</div>
 
 				{#if characters.length === 0}
@@ -135,9 +200,17 @@
 						<p class="text-[var(--text-primary)] font-semibold text-sm mb-1">No characters yet</p>
 						<p class="text-[var(--text-muted)] text-xs">Import characters to get started!</p>
 					</div>
+				{:else if filteredCharacters.length === 0}
+					<div class="text-center py-8 px-4">
+						<svg class="w-12 h-12 mx-auto mb-3 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+						<p class="text-[var(--text-secondary)] text-sm mb-1">No matches found</p>
+						<p class="text-[var(--text-muted)] text-xs">Try a different search term</p>
+					</div>
 				{:else}
 					<div class="space-y-2">
-						{#each characters as character}
+						{#each filteredCharacters as character}
 							<a
 								href="/chat/{character.id}"
 								class="group relative flex items-center gap-3 p-3 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border-primary)] hover:border-[var(--accent-primary)]/50 hover:shadow-lg hover:scale-[1.02] cursor-pointer transition-all duration-300"

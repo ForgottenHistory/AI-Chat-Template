@@ -7,12 +7,41 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let characters = $state([]);
+	let characters = $state<Character[]>([]);
 	let loading = $state(true);
 	let stats = $state({ total: 0, presets: 0 });
 	let selectedCharacter = $state<Character | null>(null);
 	let hoveredCharacterId = $state<number | null>(null);
 	let deletingCharacterId = $state<number | null>(null);
+	let searchQuery = $state('');
+	let isSearching = $state(false);
+	let searchInputRef = $state<HTMLInputElement | null>(null);
+	let viewMode = $state<'grid' | 'compact'>('grid');
+
+	let filteredCharacters = $derived(
+		searchQuery.trim()
+			? characters.filter(c =>
+				c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				(c.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+			)
+			: characters
+	);
+
+	function startSearch() {
+		isSearching = true;
+		setTimeout(() => searchInputRef?.focus(), 0);
+	}
+
+	function endSearch() {
+		if (!searchQuery.trim()) {
+			isSearching = false;
+		}
+	}
+
+	function clearSearch() {
+		searchQuery = '';
+		isSearching = false;
+	}
 
 	onMount(() => {
 		loadCharacters();
@@ -162,10 +191,69 @@
 			</div>
 
 			<!-- Characters Grid -->
-			<div class="mb-4">
-				<h2 class="text-xl font-semibold text-[var(--text-primary)] mb-4">
+			<div class="flex items-center gap-4 mb-4">
+				<h2 class="text-xl font-semibold text-[var(--text-primary)]">
 					Your Characters ({stats.total})
 				</h2>
+
+				<!-- Search Button / Expandable Search Bar -->
+				{#if isSearching}
+					<div class="relative w-64 transition-all">
+						<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+						<input
+							bind:this={searchInputRef}
+							type="text"
+							bind:value={searchQuery}
+							onblur={endSearch}
+							onkeydown={(e) => e.key === 'Escape' && clearSearch()}
+							placeholder="Search characters..."
+							class="w-full pl-10 pr-8 py-2 bg-[var(--bg-secondary)] border border-[var(--accent-primary)]/30 rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent transition"
+						/>
+						<button
+							onmousedown={(e) => e.preventDefault()}
+							onclick={clearSearch}
+							class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
+						>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+							</svg>
+						</button>
+					</div>
+				{:else}
+					<button
+						onclick={startSearch}
+						class="p-2 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition"
+						title="Search characters"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+					</button>
+				{/if}
+
+				<!-- View Mode Toggle -->
+				<div class="flex items-center bg-[var(--bg-secondary)] rounded-lg p-1 border border-[var(--border-primary)]">
+					<button
+						onclick={() => viewMode = 'grid'}
+						class="p-1.5 rounded transition {viewMode === 'grid' ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+						title="Grid view"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+						</svg>
+					</button>
+					<button
+						onclick={() => viewMode = 'compact'}
+						class="p-1.5 rounded transition {viewMode === 'compact' ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+						title="Compact view"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+						</svg>
+					</button>
+				</div>
 			</div>
 
 			{#if loading}
@@ -193,9 +281,18 @@
 					<p class="text-[var(--text-primary)] font-semibold mb-1">No characters yet</p>
 					<p class="text-[var(--text-muted)] text-sm">Upload some character cards to get started!</p>
 				</div>
-			{:else}
+			{:else if filteredCharacters.length === 0}
+				<div class="text-center py-16 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-primary)]">
+					<svg class="w-16 h-16 mx-auto mb-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+					</svg>
+					<p class="text-[var(--text-primary)] font-semibold mb-1">No matches found</p>
+					<p class="text-[var(--text-muted)] text-sm">Try a different search term</p>
+				</div>
+			{:else if viewMode === 'grid'}
+				<!-- Grid View -->
 				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-					{#each characters as character}
+					{#each filteredCharacters as character}
 						<div
 							class="relative group cursor-pointer"
 							onmouseenter={() => (hoveredCharacterId = character.id)}
@@ -271,6 +368,71 @@
 										{/if}
 									</button>
 								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<!-- Compact View -->
+				<div class="bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
+					{#each filteredCharacters as character, index}
+						<div
+							class="group flex items-center gap-4 p-3 cursor-pointer hover:bg-[var(--bg-tertiary)] transition {index !== filteredCharacters.length - 1 ? 'border-b border-[var(--border-primary)]' : ''}"
+							onclick={() => (selectedCharacter = character)}
+							onmouseenter={() => (hoveredCharacterId = character.id)}
+							onmouseleave={() => (hoveredCharacterId = null)}
+							role="button"
+							tabindex="0"
+						>
+							<!-- Avatar -->
+							<div class="flex-shrink-0">
+								{#if character.thumbnailData || character.imageData}
+									<img
+										src={character.thumbnailData || character.imageData}
+										alt={character.name}
+										class="w-12 h-16 rounded-lg object-cover"
+									/>
+								{:else}
+									<div class="w-12 h-16 rounded-lg bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center">
+										<span class="text-lg font-bold text-[var(--accent-primary)]">{character.name.charAt(0).toUpperCase()}</span>
+									</div>
+								{/if}
+							</div>
+
+							<!-- Info -->
+							<div class="flex-1 min-w-0">
+								<h3 class="font-semibold text-[var(--text-primary)] truncate">{character.name}</h3>
+								{#if character.description}
+									<p class="text-sm text-[var(--text-muted)] truncate">{character.description}</p>
+								{/if}
+							</div>
+
+							<!-- Actions -->
+							<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+								<a
+									href="/chat/{character.id}"
+									onclick={(e) => e.stopPropagation()}
+									class="p-2 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition"
+									title="Start chat"
+								>
+									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+									</svg>
+								</a>
+								<button
+									onclick={(e) => handleDelete(character.id, character.name, e)}
+									disabled={deletingCharacterId === character.id}
+									class="p-2 text-[var(--text-muted)] hover:text-[var(--error)] hover:bg-[var(--bg-secondary)] rounded-lg transition disabled:opacity-50"
+									title="Delete character"
+								>
+									{#if deletingCharacterId === character.id}
+										<div class="w-5 h-5 border-2 border-[var(--error)] border-t-transparent rounded-full animate-spin"></div>
+									{:else}
+										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+										</svg>
+									{/if}
+								</button>
 							</div>
 						</div>
 					{/each}
