@@ -189,6 +189,45 @@ export const promptPresets = sqliteTable('prompt_presets', {
 		.$defaultFn(() => new Date())
 });
 
+export const lorebooks = sqliteTable('lorebooks', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	name: text('name').notNull(),
+	description: text('description'),
+	isGlobal: integer('is_global', { mode: 'boolean' }).notNull().default(false), // Apply to all chats
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
+export const lorebookEntries = sqliteTable('lorebook_entries', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	lorebookId: integer('lorebook_id')
+		.notNull()
+		.references(() => lorebooks.id, { onDelete: 'cascade' }),
+	name: text('name').notNull(), // Entry name/title for organization
+	keywords: text('keywords').notNull(), // JSON array of trigger keywords
+	content: text('content').notNull(), // The lore content to inject
+	enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+	caseSensitive: integer('case_sensitive', { mode: 'boolean' }).notNull().default(false),
+	priority: integer('priority').notNull().default(0), // Higher = inserted first
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
+export const characterLorebooks = sqliteTable('character_lorebooks', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	characterId: integer('character_id')
+		.notNull()
+		.references(() => characters.id, { onDelete: 'cascade' }),
+	lorebookId: integer('lorebook_id')
+		.notNull()
+		.references(() => lorebooks.id, { onDelete: 'cascade' })
+});
+
 export const tagLibrary = sqliteTable('tag_library', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	userId: integer('user_id')
@@ -249,6 +288,12 @@ export type LlmPreset = typeof llmPresets.$inferSelect;
 export type NewLlmPreset = typeof llmPresets.$inferInsert;
 export type PromptPreset = typeof promptPresets.$inferSelect;
 export type NewPromptPreset = typeof promptPresets.$inferInsert;
+export type Lorebook = typeof lorebooks.$inferSelect;
+export type NewLorebook = typeof lorebooks.$inferInsert;
+export type LorebookEntry = typeof lorebookEntries.$inferSelect;
+export type NewLorebookEntry = typeof lorebookEntries.$inferInsert;
+export type CharacterLorebook = typeof characterLorebooks.$inferSelect;
+export type NewCharacterLorebook = typeof characterLorebooks.$inferInsert;
 export type Character = typeof characters.$inferSelect;
 export type NewCharacter = typeof characters.$inferInsert;
 export type TagLibrary = typeof tagLibrary.$inferSelect;

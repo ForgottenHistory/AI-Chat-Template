@@ -4,11 +4,12 @@
 
 	interface Props {
 		character: Character | null;
+		conversationId: number | null;
 		onReset: () => void;
 		onBack: () => void;
 	}
 
-	let { character, onReset, onBack }: Props = $props();
+	let { character, conversationId, onReset, onBack }: Props = $props();
 
 	// Load collapsed state from localStorage
 	let collapsed = $state(browser ? localStorage.getItem('chatHeaderCollapsed') !== 'false' : true);
@@ -28,6 +29,32 @@
 			menuPosition = { x: rect.right - 180, y: rect.bottom + 8 };
 		}
 		showMenu = !showMenu;
+	}
+
+	async function exportConversation() {
+		if (!conversationId || !character) return;
+
+		try {
+			const response = await fetch(`/api/chat/${conversationId}/export`);
+			if (!response.ok) {
+				alert('Failed to export conversation');
+				return;
+			}
+
+			const data = await response.json();
+			const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${character.name}_conversation_${new Date().toISOString().split('T')[0]}.json`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error('Failed to export conversation:', error);
+			alert('Failed to export conversation');
+		}
 	}
 </script>
 
@@ -146,6 +173,23 @@
 		class="fixed bg-[var(--bg-secondary)] backdrop-blur-md border border-[var(--border-primary)] rounded-xl shadow-xl py-1 min-w-[180px] z-[999]"
 		style="left: {menuPosition.x}px; top: {menuPosition.y}px;"
 	>
+		<button
+			onclick={() => {
+				showMenu = false;
+				exportConversation();
+			}}
+			class="w-full text-left px-4 py-2.5 text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all font-medium flex items-center gap-2"
+		>
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+				/>
+			</svg>
+			Export Conversation
+		</button>
 		<button
 			onclick={() => {
 				showMenu = false;

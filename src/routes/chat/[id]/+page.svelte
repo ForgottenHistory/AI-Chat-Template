@@ -535,6 +535,7 @@
 	<div class="h-full flex flex-col bg-[var(--bg-primary)]">
 		<ChatHeader
 			{character}
+			{conversationId}
 			onReset={resetConversation}
 			onBack={() => window.location.href = '/library'}
 		/>

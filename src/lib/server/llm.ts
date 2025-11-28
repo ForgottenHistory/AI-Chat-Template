@@ -1,6 +1,7 @@
 import { llmService } from './services/llmService';
 import { llmLogService } from './services/llmLogService';
 import { personaService } from './services/personaService';
+import { lorebookService } from './services/lorebookService';
 import { logger } from './utils/logger';
 import type { Message, Character, LlmSettings } from './db/schema';
 import fs from 'fs/promises';
@@ -134,6 +135,16 @@ export async function generateChatCompletion(
 		finalSystemPrompt += `\n\n${characterData.system_prompt}`;
 	}
 
+	// Add lorebook/world info context based on conversation keywords
+	const lorebookContext = await lorebookService.buildLorebookContext(
+		settings.userId,
+		character.id,
+		conversationHistory.map((m) => ({ content: m.content }))
+	);
+	if (lorebookContext) {
+		finalSystemPrompt += `\n\n${lorebookContext}`;
+	}
+
 	// Format conversation history for LLM
 	const formattedMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
 
@@ -234,7 +245,17 @@ export async function generateImpersonation(
 	};
 
 	// Replace variables in template
-	const impersonatePrompt = replaceTemplateVariables(basePrompt, templateVariables);
+	let impersonatePrompt = replaceTemplateVariables(basePrompt, templateVariables);
+
+	// Add lorebook/world info context based on conversation keywords
+	const lorebookContext = await lorebookService.buildLorebookContext(
+		settings.userId,
+		character.id,
+		conversationHistory.map((m) => ({ content: m.content }))
+	);
+	if (lorebookContext) {
+		impersonatePrompt += `\n\n${lorebookContext}`;
+	}
 
 	// Format conversation history for LLM
 	const formattedMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
