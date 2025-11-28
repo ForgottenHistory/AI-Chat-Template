@@ -5,6 +5,7 @@
 	import ChatHeader from '$lib/components/chat/ChatHeader.svelte';
 	import ChatMessages from '$lib/components/chat/ChatMessages.svelte';
 	import ChatInput from '$lib/components/chat/ChatInput.svelte';
+	import ImageGenerateModal from '$lib/components/chat/ImageGenerateModal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import {
 		initSocket,
@@ -26,8 +27,16 @@
 	let sending = $state(false);
 	let regenerating = $state(false);
 	let impersonating = $state(false);
+	let generatingImage = $state(false);
+	let generatingSD = $state(false);
 	let conversationId = $state<number | null>(null);
 	let isTyping = $state(false);
+
+	// Image generation modal state
+	let showImageModal = $state(false);
+	let imageModalLoading = $state(false);
+	let imageModalTags = $state('');
+	let imageModalType = $state<'character' | 'user' | 'scene'>('character');
 	let chatMessages: ChatMessages;
 	let chatInput: ChatInput;
 	let previousCharacterId: number | null = null;
@@ -186,6 +195,73 @@
 		} finally {
 			impersonating = false;
 		}
+	}
+
+	async function generateImage(type: 'character' | 'user' | 'scene') {
+		if (generatingImage || !conversationId) return;
+
+		// Open modal and start loading
+		imageModalType = type;
+		imageModalTags = '';
+		showImageModal = true;
+		imageModalLoading = true;
+		generatingImage = true;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/generate-image`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ type })
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				imageModalTags = result.tags;
+			} else {
+				const error = await response.json();
+				alert(`Failed to generate tags: ${error.error || 'Unknown error'}`);
+				showImageModal = false;
+			}
+		} catch (error) {
+			console.error('Failed to generate tags:', error);
+			alert('Failed to generate tags');
+			showImageModal = false;
+		} finally {
+			imageModalLoading = false;
+			generatingImage = false;
+		}
+	}
+
+	async function handleImageGenerate(tags: string) {
+		if (generatingSD) return;
+		generatingSD = true;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/generate-sd`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ tags })
+			});
+
+			if (response.ok) {
+				// Message will arrive via Socket.IO
+				showImageModal = false;
+				imageModalTags = '';
+				setTimeout(() => chatMessages?.scrollToBottom(), 100);
+			} else {
+				const error = await response.json();
+				alert(`Failed to generate image: ${error.error || 'Unknown error'}`);
+			}
+		} catch (error) {
+			console.error('Failed to generate image:', error);
+			alert('Failed to generate image');
+		} finally {
+			generatingSD = false;
+		}
+	}
+
+	function handleImageCancel() {
+		imageModalTags = '';
 	}
 
 	async function resetConversation() {
@@ -476,10 +552,22 @@
 			disabled={sending || regenerating}
 			{hasAssistantMessages}
 			{impersonating}
+			{generatingImage}
 			onSend={sendMessage}
 			onGenerate={generateResponse}
 			onRegenerate={regenerateLastMessage}
 			onImpersonate={impersonate}
+			onGenerateImage={generateImage}
 		/>
 	</div>
 </MainLayout>
+
+<ImageGenerateModal
+	bind:show={showImageModal}
+	loading={imageModalLoading}
+	generating={generatingSD}
+	tags={imageModalTags}
+	type={imageModalType}
+	onGenerate={handleImageGenerate}
+	onCancel={handleImageCancel}
+/>

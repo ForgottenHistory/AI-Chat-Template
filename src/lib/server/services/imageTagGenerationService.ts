@@ -10,31 +10,50 @@ const PROMPTS_DIR = 'data/prompts';
 
 class ImageTagGenerationService {
 	private tagLibraryCache: Map<string, string> = new Map();
-	private generatePromptCache: string | null = null;
+	private promptsCache: {
+		character: string | null;
+		user: string | null;
+		scene: string | null;
+	} = { character: null, user: null, scene: null };
 
 	/**
-	 * Load image generate prompt from file
+	 * Load image prompts from files
 	 */
-	async loadGeneratePrompt(): Promise<string> {
-		if (this.generatePromptCache) {
-			return this.generatePromptCache;
-		}
+	async loadPrompts(): Promise<{ character: string; user: string; scene: string }> {
+		const defaults = {
+			character: 'Generate Danbooru tags for the character. Focus on expression, pose, clothing with colors. Output ONLY comma-separated tags.',
+			user: 'Generate Danbooru tags for user presence/POV. Output "none" if user not visible. Output ONLY comma-separated tags.',
+			scene: 'Generate Danbooru tags for the scene. Include composition tag (close-up, upper body, etc.), location, lighting. Output ONLY comma-separated tags.'
+		};
 
-		try {
-			const content = await fs.readFile(path.join(PROMPTS_DIR, 'image_generate.txt'), 'utf-8');
-			this.generatePromptCache = content.trim();
-			return this.generatePromptCache;
-		} catch (error) {
-			console.error('Failed to load image generate prompt, using default:', error);
-			return 'Select appropriate Danbooru tags based on the conversation context. Output ONLY comma-separated tags.';
-		}
+		const loadPrompt = async (name: 'character' | 'user' | 'scene'): Promise<string> => {
+			if (this.promptsCache[name]) {
+				return this.promptsCache[name]!;
+			}
+			try {
+				const content = await fs.readFile(path.join(PROMPTS_DIR, `image_${name}.txt`), 'utf-8');
+				this.promptsCache[name] = content.trim();
+				return this.promptsCache[name]!;
+			} catch (error) {
+				console.error(`Failed to load image_${name}.txt, using default:`, error);
+				return defaults[name];
+			}
+		};
+
+		const [character, user, scene] = await Promise.all([
+			loadPrompt('character'),
+			loadPrompt('user'),
+			loadPrompt('scene')
+		]);
+
+		return { character, user, scene };
 	}
 
 	/**
 	 * Clear prompts cache (call when prompts are updated)
 	 */
 	clearPromptsCache() {
-		this.generatePromptCache = null;
+		this.promptsCache = { character: null, user: null, scene: null };
 	}
 
 	/**
@@ -68,6 +87,8 @@ class ImageTagGenerationService {
 
 	/**
 	 * Generate image tags using the Image LLM
+	 * Can generate all tags or specific types (character, user, scene)
+	 * @param type - Which tags to generate: 'all', 'character', 'user', or 'scene'
 	 * @param imageTags - Always included tags (character appearance - hair, eyes, body)
 	 * @param contextualTags - Character-specific tags the AI can choose from
 	 */
@@ -76,16 +97,18 @@ class ImageTagGenerationService {
 		conversationContext,
 		characterName = '',
 		imageTags = '',
-		contextualTags = ''
+		contextualTags = '',
+		type = 'all'
 	}: {
 		userId: number;
 		conversationContext: string;
 		characterName?: string;
 		imageTags?: string;
 		contextualTags?: string;
-	}): Promise<{ generatedTags: string; alwaysTags: string }> {
+		type?: 'all' | 'character' | 'user' | 'scene';
+	}): Promise<{ generatedTags: string; alwaysTags: string; breakdown?: { character?: string; user?: string; scene?: string } }> {
 		try {
-			console.log('🎨 Generating image tags from conversation context...');
+			console.log(`🎨 Generating image tags (${type}) from conversation context...`);
 
 			// Get user's Image LLM settings
 			const settings = await imageLlmSettingsService.getUserSettings(userId);
@@ -95,36 +118,69 @@ class ImageTagGenerationService {
 				temperature: settings.temperature
 			});
 
-			// Load prompt and tag library
-			const [generatePrompt, tagLibrary] = await Promise.all([
-				this.loadGeneratePrompt(),
+			// Load prompts and tag library
+			const [prompts, tagLibrary] = await Promise.all([
+				this.loadPrompts(),
 				this.loadTagLibrary(userId)
 			]);
 
-			// Build prompt - contextualTags are what AI can choose from
-			const prompt = this.buildTagGenerationPrompt({
+			// Build base context for all prompts
+			const baseContext = this.buildBaseContext({
 				conversationContext,
-				characterTags: contextualTags, // AI chooses from these
+				characterTags: contextualTags,
 				characterName,
-				tagLibrary,
-				generatePrompt
+				tagLibrary
 			});
 
-			// Call LLM directly with Image LLM settings
-			const response = await this.callImageLLM({
-				messages: [
-					{ role: 'user', content: prompt }
-				],
-				settings
-			});
+			const breakdown: { character?: string; user?: string; scene?: string } = {};
 
-			const generatedTags = response.trim();
-			console.log('🤖 LLM generated tags:', generatedTags);
+			// Generate tags based on type
+			if (type === 'all') {
+				// Make three parallel LLM calls for character, user, and scene
+				const [characterTags, userTags, sceneTags] = await Promise.all([
+					this.callImageLLM({
+						messages: [{ role: 'user', content: `${baseContext}\n\n${prompts.character}\n\nYour selected tags:` }],
+						settings
+					}),
+					this.callImageLLM({
+						messages: [{ role: 'user', content: `${baseContext}\n\n${prompts.user}\n\nYour selected tags:` }],
+						settings
+					}),
+					this.callImageLLM({
+						messages: [{ role: 'user', content: `${baseContext}\n\n${prompts.scene}\n\nYour selected tags:` }],
+						settings
+					})
+				]);
+
+				breakdown.character = characterTags.trim();
+				breakdown.user = userTags.trim();
+				breakdown.scene = sceneTags.trim();
+
+				console.log('🤖 Character tags:', breakdown.character);
+				console.log('🤖 User tags:', breakdown.user);
+				console.log('🤖 Scene tags:', breakdown.scene);
+			} else {
+				// Generate only the requested type
+				const tags = await this.callImageLLM({
+					messages: [{ role: 'user', content: `${baseContext}\n\n${prompts[type]}\n\nYour selected tags:` }],
+					settings
+				});
+				breakdown[type] = tags.trim();
+				console.log(`🤖 ${type} tags:`, breakdown[type]);
+			}
+
+			// Combine all generated tags, filtering out "none" responses
+			const allTags = Object.values(breakdown)
+				.filter((tags): tags is string => !!tags && tags.toLowerCase() !== 'none' && tags.length > 0)
+				.join(', ');
+
+			console.log('🎨 Combined generated tags:', allTags);
 			console.log('🎨 Always included tags:', imageTags);
 
 			return {
-				generatedTags,
-				alwaysTags: imageTags // These are always included in the final prompt
+				generatedTags: allTags,
+				alwaysTags: imageTags, // These are always included in the final prompt
+				breakdown
 			};
 		} catch (error: any) {
 			console.error('❌ Failed to generate image tags:', error.message);
@@ -177,25 +233,23 @@ class ImageTagGenerationService {
 	}
 
 	/**
-	 * Build the prompt for tag generation
+	 * Build the base context shared by all three tag generation prompts
 	 */
-	private buildTagGenerationPrompt({
+	private buildBaseContext({
 		conversationContext,
 		characterTags,
 		characterName,
-		tagLibrary,
-		generatePrompt
+		tagLibrary
 	}: {
 		conversationContext: string;
 		characterTags: string;
 		characterName: string;
 		tagLibrary: string;
-		generatePrompt: string;
 	}): string {
-		let prompt = '';
+		let context = '';
 
 		if (tagLibrary) {
-			prompt += `Here is the library of valid Danbooru tags you can choose from:
+			context += `Here is the library of valid Danbooru tags you can choose from:
 
 ${tagLibrary}
 
@@ -205,7 +259,7 @@ ${tagLibrary}
 		}
 
 		if (characterTags) {
-			prompt += `Character-specific tags for ${characterName || 'this character'} (you MAY include these if relevant):
+			context += `Character-specific tags for ${characterName || 'this character'} (you MAY include these if relevant):
 ${characterTags}
 
 ---
@@ -213,18 +267,14 @@ ${characterTags}
 `;
 		}
 
-		prompt += `Recent conversation:
+		context += `Recent conversation:
 ${conversationContext}
 
 ---
 
-Based on the conversation, select appropriate Danbooru tags.
+Based on the conversation, select appropriate Danbooru tags.`;
 
-${generatePrompt}
-
-Your selected tags:`;
-
-		return prompt;
+		return context;
 	}
 }
 

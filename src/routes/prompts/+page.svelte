@@ -147,25 +147,50 @@ Rewritten greeting:`
 			}
 		},
 		image: {
-			generate: {
-				title: 'Image Tag Generation Prompt',
-				description: 'Instructions for generating Danbooru-style tags from roleplay context',
-				default: `Guidelines:
-- Choose 5-10 tags that best match the current scene and conversation context
-- **ALWAYS include a focus/composition tag** (close-up, upper body, cowboy shot, full body, portrait, etc.)
-- **CLOTHING/APPEARANCE MUST BE HIGHLY SPECIFIC** - This is critical!
-  * ALWAYS add color + clothing type: "white shirt", "black jacket", "blue dress", "red hoodie"
-  * Add style details: "torn clothing", "elegant gown", "casual wear", "formal suit"
-  * NEVER use vague terms: "clothes", "outfit" (too vague - specify color/style!)
-- Focus on: expression, pose, action, clothing (COLOR + TYPE + DETAILS), environment, lighting, mood
-- Match the scene to what's happening in the roleplay
+			character: {
+				title: 'Character Tags Prompt',
+				description: 'Instructions for generating tags describing the character (expression, pose, clothing, actions)',
+				default: `Generate Danbooru tags for the CHARACTER in this scene.
 
-- Only use tags from the library above or the character-specific tags
-- Output ONLY comma-separated tags, no explanations
-- Be specific and contextual - capture the current scene
+Focus on:
+- Expression (smiling, blushing, angry, crying, etc.)
+- Pose and body position (standing, sitting, lying down, etc.)
+- Actions they're doing (reading, eating, waving, etc.)
+- Clothing details with COLOR + TYPE (white shirt, black jacket, blue dress)
+- Accessories (glasses, jewelry, hat, etc.)
 
-Example output format:
-upper body, smiling, white shirt, black jacket, indoor, soft lighting, looking at viewer`
+Output ONLY comma-separated tags for the character, no explanations.`
+			},
+			user: {
+				title: 'User Tags Prompt',
+				description: 'Instructions for generating tags related to user presence/POV in the scene',
+				default: `Generate Danbooru tags for the USER's perspective/presence in this scene.
+
+Focus on:
+- POV tags if applicable (pov, pov hands, first-person view)
+- User's actions toward the character (holding hands, hugging, etc.)
+- User presence indicators (1boy, 1other, etc. if visible)
+
+If the user is not visible or relevant to the image, output: none
+
+Output ONLY comma-separated tags, no explanations.`
+			},
+			scene: {
+				title: 'Scene Tags Prompt',
+				description: 'Instructions for generating tags for composition, environment, and atmosphere',
+				default: `Generate Danbooru tags for the SCENE/ENVIRONMENT.
+
+Focus on:
+- Composition/framing (close-up, upper body, cowboy shot, full body, portrait)
+- Location (indoors, outdoors, bedroom, cafe, park, etc.)
+- Time of day (day, night, sunset, etc.)
+- Lighting (soft lighting, dramatic lighting, backlighting, etc.)
+- Atmosphere/mood (warm colors, dark atmosphere, etc.)
+- Background elements (window, bed, table, trees, etc.)
+
+**ALWAYS include a composition tag** (close-up, upper body, cowboy shot, full body, portrait)
+
+Output ONLY comma-separated tags, no explanations.`
 			}
 		}
 	};

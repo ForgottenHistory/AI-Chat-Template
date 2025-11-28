@@ -10,6 +10,15 @@
 
 	let { content, role, charName = 'Character', userName = 'User' }: Props = $props();
 
+	// Check if this is an SD image message
+	const sdImageMatch = content.match(/^\[SD_IMAGE\](.+?)\|(.+?)\[\/SD_IMAGE\]$/s);
+	const isImageMessage = !!sdImageMatch;
+	const imageSrc = sdImageMatch?.[1] || '';
+	const imagePrompt = sdImageMatch?.[2] || '';
+
+	// Lightbox state
+	let showLightbox = $state(false);
+
 	// Custom renderer for RP-style formatting
 	function renderMessage(text: string): string {
 		// Replace template variables (case-insensitive)
@@ -68,9 +77,44 @@
 	let renderedContent = $derived(renderMessage(content));
 </script>
 
-<div class="chat-message {role}">
-	{@html renderedContent}
-</div>
+{#if isImageMessage}
+	<!-- SD Generated Image -->
+	<button
+		type="button"
+		class="sd-image-thumbnail"
+		onclick={() => showLightbox = true}
+	>
+		<img src={imageSrc} alt="Generated image" />
+	</button>
+
+	<!-- Lightbox -->
+	{#if showLightbox}
+		<div
+			class="lightbox"
+			onclick={() => showLightbox = false}
+			onkeydown={(e) => e.key === 'Escape' && (showLightbox = false)}
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+		>
+			<button
+				type="button"
+				class="lightbox-close"
+				onclick={() => showLightbox = false}
+			>
+				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+			<img src={imageSrc} alt="Generated image full size" class="lightbox-image" />
+			<p class="lightbox-prompt">{imagePrompt}</p>
+		</div>
+	{/if}
+{:else}
+	<div class="chat-message {role}">
+		{@html renderedContent}
+	</div>
+{/if}
 
 <style>
 	.chat-message {
@@ -160,5 +204,85 @@
 	.chat-message.user :global(blockquote) {
 		border-left-color: rgba(255, 255, 255, 0.5);
 		color: rgba(255, 255, 255, 0.8);
+	}
+
+	.chat-message :global(img) {
+		max-width: 100%;
+		border-radius: 0.75rem;
+		margin: 0.5em 0;
+	}
+
+	.chat-message :global(p:has(img)) {
+		margin: 0;
+	}
+
+	/* SD Image Thumbnail */
+	.sd-image-thumbnail {
+		cursor: pointer;
+		border: none;
+		padding: 0;
+		background: none;
+		border-radius: 0.75rem;
+		overflow: hidden;
+		transition: transform 0.2s, box-shadow 0.2s;
+	}
+
+	.sd-image-thumbnail:hover {
+		transform: scale(1.02);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+	}
+
+	.sd-image-thumbnail img {
+		display: block;
+		width: 256px;
+		height: auto;
+		border-radius: 0.75rem;
+	}
+
+	/* Lightbox */
+	.lightbox {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.9);
+		z-index: 100;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 2rem;
+		gap: 1rem;
+	}
+
+	.lightbox-close {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		background: rgba(255, 255, 255, 0.1);
+		border: none;
+		color: white;
+		padding: 0.5rem;
+		border-radius: 0.5rem;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.lightbox-close:hover {
+		background: rgba(255, 255, 255, 0.2);
+	}
+
+	.lightbox-image {
+		max-width: 90vw;
+		max-height: 80vh;
+		object-fit: contain;
+		border-radius: 0.5rem;
+	}
+
+	.lightbox-prompt {
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 0.875rem;
+		text-align: center;
+		max-width: 80vw;
+		line-height: 1.5;
+		margin: 0;
 	}
 </style>

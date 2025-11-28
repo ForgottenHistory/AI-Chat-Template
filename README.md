@@ -2,6 +2,8 @@
 
 A personal-use template for AI character chat applications. Designed to either work standalone or serve as a base for forking into other projects.
 
+Derived from an AI dating app I made, check it out: https://github.com/ForgottenHistory/Cupid-AI
+
 ![AI Chat](images/chat.png)
 
 ## Features
