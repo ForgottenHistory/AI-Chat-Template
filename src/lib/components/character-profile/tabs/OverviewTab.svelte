@@ -39,6 +39,56 @@
 
 	let saving = $state(false);
 
+	// Copy states
+	let copiedDescription = $state(false);
+	let copiedScenario = $state(false);
+	let copiedPersonality = $state(false);
+	let copiedCreatorNotes = $state(false);
+
+	async function copyField(field: 'description' | 'scenario' | 'personality' | 'creator_notes') {
+		let content = '';
+		switch (field) {
+			case 'description':
+				content = character.description || data.description || '';
+				break;
+			case 'scenario':
+				content = data.scenario || '';
+				break;
+			case 'personality':
+				content = data.personality || '';
+				break;
+			case 'creator_notes':
+				content = data.creator_notes || '';
+				break;
+		}
+
+		if (!content) return;
+
+		try {
+			await navigator.clipboard.writeText(content);
+			switch (field) {
+				case 'description':
+					copiedDescription = true;
+					setTimeout(() => (copiedDescription = false), 2000);
+					break;
+				case 'scenario':
+					copiedScenario = true;
+					setTimeout(() => (copiedScenario = false), 2000);
+					break;
+				case 'personality':
+					copiedPersonality = true;
+					setTimeout(() => (copiedPersonality = false), 2000);
+					break;
+				case 'creator_notes':
+					copiedCreatorNotes = true;
+					setTimeout(() => (copiedCreatorNotes = false), 2000);
+					break;
+			}
+		} catch (err) {
+			console.error('Failed to copy:', err);
+		}
+	}
+
 	// Rewrite states
 	let rewritingDescription = $state(false);
 	let rewritingScenario = $state(false);
@@ -221,6 +271,23 @@
 			<h4 class="text-sm font-medium text-[var(--text-secondary)]">Description</h4>
 			{#if !editingDescription}
 				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+					{#if character.description || data.description}
+					<button
+						onclick={() => copyField('description')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						title="Copy to clipboard"
+					>
+						{#if copiedDescription}
+							<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							</svg>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						{/if}
+					</button>
+					{/if}
 					<button
 						onclick={() => rewriteField('description')}
 						disabled={rewritingDescription || !(character.description || data.description)}
@@ -301,6 +368,23 @@
 			<h4 class="text-sm font-medium text-[var(--text-secondary)]">Scenario</h4>
 			{#if !editingScenario}
 				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+					{#if data.scenario}
+					<button
+						onclick={() => copyField('scenario')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						title="Copy to clipboard"
+					>
+						{#if copiedScenario}
+							<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							</svg>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						{/if}
+					</button>
+					{/if}
 					<button
 						onclick={() => rewriteField('scenario')}
 						disabled={rewritingScenario || !data.scenario}
@@ -421,11 +505,28 @@
 				</div>
 			</div>
 		{:else}
-			<div class="flex items-start justify-between gap-2">
+			<div class="flex items-start justify-between gap-2 group">
 				<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed flex-1">
 					{data.personality || 'No personality defined'}
 				</div>
-				<div class="flex items-center gap-1 flex-shrink-0">
+				<div class="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition">
+					{#if data.personality}
+					<button
+						onclick={() => copyField('personality')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						title="Copy to clipboard"
+					>
+						{#if copiedPersonality}
+							<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							</svg>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						{/if}
+					</button>
+					{/if}
 					<button
 						onclick={() => rewriteField('personality')}
 						disabled={rewritingPersonality || !data.personality}
@@ -485,19 +586,38 @@
 				</div>
 			</div>
 		{:else}
-			<div class="flex items-start justify-between gap-2">
+			<div class="flex items-start justify-between gap-2 group">
 				<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed flex-1">
 					{data.creator_notes || 'No creator notes available'}
 				</div>
-				<button
-					onclick={() => startEditing('creator_notes')}
-					class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition flex-shrink-0"
-					aria-label="Edit creator notes"
-				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-					</svg>
-				</button>
+				<div class="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition">
+					{#if data.creator_notes}
+					<button
+						onclick={() => copyField('creator_notes')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						title="Copy to clipboard"
+					>
+						{#if copiedCreatorNotes}
+							<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							</svg>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						{/if}
+					</button>
+					{/if}
+					<button
+						onclick={() => startEditing('creator_notes')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						aria-label="Edit creator notes"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+						</svg>
+					</button>
+				</div>
 			</div>
 		{/if}
 	</CollapsibleSection>

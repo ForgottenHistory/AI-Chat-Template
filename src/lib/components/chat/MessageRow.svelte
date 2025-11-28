@@ -2,6 +2,7 @@
 	import type { Message } from '$lib/server/db/schema';
 	import ChatMessage from '$lib/components/ChatMessage.svelte';
 	import MessageControls from './MessageControls.svelte';
+	import ReasoningModal from './ReasoningModal.svelte';
 
 	interface Props {
 		message: Message;
@@ -20,13 +21,30 @@
 
 	let { message, index, isLast, charName, userName, charAvatar, userAvatar, avatarStyle = 'circle', generating, onSwipe, onSaveEdit, onDelete }: Props = $props();
 
+	// Reasoning modal state
+	let showReasoningModal = $state(false);
+	let currentReasoning = $derived(() => {
+		if (!message.reasoning) return '';
+		// Try parsing as array (for swipes)
+		try {
+			const reasoningArray = JSON.parse(message.reasoning);
+			if (Array.isArray(reasoningArray)) {
+				const currentIndex = message.currentSwipe ?? 0;
+				return reasoningArray[currentIndex] || '';
+			}
+		} catch {
+			// Not JSON array, treat as plain string
+		}
+		return message.reasoning;
+	});
+
 	let isUser = $derived(message.role === 'user');
 	let showSwipeControls = $derived(message.role === 'assistant' && isLast);
 	let showGeneratingPlaceholder = $derived(generating && isLast && message.role === 'assistant');
 
-	// Display info based on role
-	let displayName = $derived(isUser ? (userName || 'User') : (charName || 'Assistant'));
-	let avatar = $derived(isUser ? userAvatar : charAvatar);
+	// Display info - prefer stored sender info, fall back to current names
+	let displayName = $derived(message.senderName || (isUser ? (userName || 'User') : (charName || 'Assistant')));
+	let avatar = $derived(message.senderAvatar || (isUser ? userAvatar : charAvatar));
 	let avatarClass = $derived(avatarStyle === 'rounded' ? 'rounded-xl' : 'rounded-full');
 	let avatarSize = $derived(avatarStyle === 'rounded' ? 'w-12 h-16' : 'w-12 h-12');
 
@@ -129,6 +147,7 @@
 					{onSwipe}
 					onEdit={startEdit}
 					{onDelete}
+					onShowReasoning={() => showReasoningModal = true}
 					disabled={isEditing || generating}
 					compact={true}
 				/>
@@ -181,3 +200,5 @@
 		{/if}
 	</div>
 </div>
+
+<ReasoningModal bind:show={showReasoningModal} reasoning={currentReasoning()} />

@@ -23,6 +23,56 @@
 	let saveError = $state<string | null>(null);
 	let saveSuccess = $state<string | null>(null);
 
+	// Copy states
+	let copiedImageTags = $state(false);
+	let copiedContextualTags = $state(false);
+	let copiedMainPrompt = $state(false);
+	let copiedNegativePrompt = $state(false);
+
+	async function copyField(field: 'imageTags' | 'contextualTags' | 'mainPrompt' | 'negativePrompt') {
+		let content = '';
+		switch (field) {
+			case 'imageTags':
+				content = imageTags;
+				break;
+			case 'contextualTags':
+				content = contextualTags;
+				break;
+			case 'mainPrompt':
+				content = mainPromptOverride;
+				break;
+			case 'negativePrompt':
+				content = negativePromptOverride;
+				break;
+		}
+
+		if (!content) return;
+
+		try {
+			await navigator.clipboard.writeText(content);
+			switch (field) {
+				case 'imageTags':
+					copiedImageTags = true;
+					setTimeout(() => (copiedImageTags = false), 2000);
+					break;
+				case 'contextualTags':
+					copiedContextualTags = true;
+					setTimeout(() => (copiedContextualTags = false), 2000);
+					break;
+				case 'mainPrompt':
+					copiedMainPrompt = true;
+					setTimeout(() => (copiedMainPrompt = false), 2000);
+					break;
+				case 'negativePrompt':
+					copiedNegativePrompt = true;
+					setTimeout(() => (copiedNegativePrompt = false), 2000);
+					break;
+			}
+		} catch (err) {
+			console.error('Failed to copy:', err);
+		}
+	}
+
 	// Reset state when character changes
 	$effect(() => {
 		imageTags = character.imageTags || '';
@@ -169,10 +219,29 @@
 	{/if}
 
 	<!-- Always Needed Tags -->
-	<div class="space-y-2">
-		<label class="block text-sm font-medium text-[var(--text-secondary)]">
-			Always Needed Tags (Character Appearance)
-		</label>
+	<div class="space-y-2 group">
+		<div class="flex items-center justify-between">
+			<label class="block text-sm font-medium text-[var(--text-secondary)]">
+				Always Needed Tags (Character Appearance)
+			</label>
+			{#if imageTags}
+			<button
+				onclick={() => copyField('imageTags')}
+				class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
+				title="Copy to clipboard"
+			>
+				{#if copiedImageTags}
+					<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					</svg>
+				{:else}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+					</svg>
+				{/if}
+			</button>
+			{/if}
+		</div>
 		<p class="text-xs text-[var(--text-muted)]">
 			These tags are ALWAYS included in every generated image (e.g., hair color, eye color, body type)
 		</p>
@@ -185,10 +254,29 @@
 	</div>
 
 	<!-- Contextual Tags -->
-	<div class="space-y-2">
-		<label class="block text-sm font-medium text-[var(--text-secondary)]">
-			Contextual Tags (Character-Specific Options)
-		</label>
+	<div class="space-y-2 group">
+		<div class="flex items-center justify-between">
+			<label class="block text-sm font-medium text-[var(--text-secondary)]">
+				Contextual Tags (Character-Specific Options)
+			</label>
+			{#if contextualTags}
+			<button
+				onclick={() => copyField('contextualTags')}
+				class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
+				title="Copy to clipboard"
+			>
+				{#if copiedContextualTags}
+					<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					</svg>
+				{:else}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+					</svg>
+				{/if}
+			</button>
+			{/if}
+		</div>
 		<p class="text-xs text-[var(--text-muted)]">
 			AI chooses from these tags based on conversation context (e.g., clothing, common poses, settings)
 		</p>
@@ -214,10 +302,29 @@
 	</div>
 
 	<!-- Main Prompt Override -->
-	<div class="space-y-2">
-		<label class="block text-sm font-medium text-[var(--text-secondary)]">
-			Main Prompt Override
-		</label>
+	<div class="space-y-2 group">
+		<div class="flex items-center justify-between">
+			<label class="block text-sm font-medium text-[var(--text-secondary)]">
+				Main Prompt Override
+			</label>
+			{#if mainPromptOverride}
+			<button
+				onclick={() => copyField('mainPrompt')}
+				class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
+				title="Copy to clipboard"
+			>
+				{#if copiedMainPrompt}
+					<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					</svg>
+				{:else}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+					</svg>
+				{/if}
+			</button>
+			{/if}
+		</div>
 		<p class="text-xs text-[var(--text-muted)]">
 			Replaces the global main prompt (default: "masterpiece, best quality, amazing quality, 1girl, solo")
 		</p>
@@ -230,10 +337,29 @@
 	</div>
 
 	<!-- Negative Prompt Override -->
-	<div class="space-y-2">
-		<label class="block text-sm font-medium text-[var(--text-secondary)]">
-			Negative Prompt Override
-		</label>
+	<div class="space-y-2 group">
+		<div class="flex items-center justify-between">
+			<label class="block text-sm font-medium text-[var(--text-secondary)]">
+				Negative Prompt Override
+			</label>
+			{#if negativePromptOverride}
+			<button
+				onclick={() => copyField('negativePrompt')}
+				class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition opacity-0 group-hover:opacity-100"
+				title="Copy to clipboard"
+			>
+				{#if copiedNegativePrompt}
+					<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					</svg>
+				{:else}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+					</svg>
+				{/if}
+			</button>
+			{/if}
+		</div>
 		<p class="text-xs text-[var(--text-muted)]">
 			Replaces the global negative prompt (things to avoid in generated images)
 		</p>

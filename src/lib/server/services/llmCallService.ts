@@ -111,7 +111,7 @@ export async function callLlm({
 	// Add reasoning parameter if enabled (OpenRouter only)
 	if (settings.reasoningEnabled && provider === 'openrouter') {
 		requestBody.reasoning = {
-			enabled: true
+			effort: 'medium'
 		};
 	}
 

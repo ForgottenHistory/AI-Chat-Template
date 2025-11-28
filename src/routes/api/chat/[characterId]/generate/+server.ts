@@ -66,25 +66,34 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 		// Emit typing indicator
 		emitTyping(conversation.id, true);
 
-		// Generate AI response
-		const aiResponse = await generateChatCompletion(
-			conversationHistory,
-			character,
-			settings,
-			undefined,
-			'chat'
-		);
+		let aiResult: { content: string; reasoning: string | null };
+		try {
+			// Generate AI response
+			aiResult = await generateChatCompletion(
+				conversationHistory,
+				character,
+				settings,
+				'chat'
+			);
+		} catch (genError) {
+			// Stop typing indicator on generation error
+			emitTyping(conversation.id, false);
+			throw genError;
+		}
 
 		// Stop typing indicator
 		emitTyping(conversation.id, false);
 
-		// Save AI response
+		// Save AI response with character info
 		const [assistantMessage] = await db
 			.insert(messages)
 			.values({
 				conversationId: conversation.id,
 				role: 'assistant',
-				content: aiResponse
+				content: aiResult.content,
+				senderName: character.name,
+				senderAvatar: character.thumbnailData || character.imageData,
+				reasoning: aiResult.reasoning
 			})
 			.returning();
 

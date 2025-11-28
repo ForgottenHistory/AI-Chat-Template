@@ -4,6 +4,7 @@ import { conversations, messages, characters, llmSettings } from '$lib/server/db
 import { eq, and } from 'drizzle-orm';
 import { generateChatCompletion } from '$lib/server/llm';
 import { emitMessage, emitTyping } from '$lib/server/socket';
+import { personaService } from '$lib/server/services/personaService';
 
 // POST - Send a message and get AI response
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
@@ -46,13 +47,18 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 				.returning();
 		}
 
-		// Save user message
+		// Get active persona info for sender details
+		const userInfo = await personaService.getActiveUserInfo(parseInt(userId));
+
+		// Save user message with sender info
 		const [userMessage] = await db
 			.insert(messages)
 			.values({
 				conversationId: conversation.id,
 				role: 'user',
-				content: message.trim()
+				content: message.trim(),
+				senderName: userInfo.name,
+				senderAvatar: userInfo.avatarData
 			})
 			.returning();
 
@@ -91,25 +97,34 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		// Emit typing indicator
 		emitTyping(conversation.id, true);
 
-		// Generate AI response
-		const aiResponse = await generateChatCompletion(
-			conversationHistory,
-			character,
-			settings,
-			undefined, // no custom template
-			'chat' // message type for logging
-		);
+		let aiResult: { content: string; reasoning: string | null };
+		try {
+			// Generate AI response
+			aiResult = await generateChatCompletion(
+				conversationHistory,
+				character,
+				settings,
+				'chat' // message type for logging
+			);
+		} catch (genError) {
+			// Stop typing indicator on generation error
+			emitTyping(conversation.id, false);
+			throw genError;
+		}
 
 		// Stop typing indicator
 		emitTyping(conversation.id, false);
 
-		// Save AI response
+		// Save AI response with character info
 		const [assistantMessage] = await db
 			.insert(messages)
 			.values({
 				conversationId: conversation.id,
 				role: 'assistant',
-				content: aiResponse
+				content: aiResult.content,
+				senderName: character.name,
+				senderAvatar: character.thumbnailData || character.imageData,
+				reasoning: aiResult.reasoning
 			})
 			.returning();
 

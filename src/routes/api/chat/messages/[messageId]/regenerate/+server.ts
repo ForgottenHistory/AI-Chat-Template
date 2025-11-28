@@ -86,6 +86,7 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 		const isImageMessage = !!sdImageMatch;
 
 		let newContent: string;
+		let newReasoning: string | null = null;
 
 		if (isImageMessage) {
 			// Regenerate image using the same prompt (already fully combined)
@@ -140,24 +141,36 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 			// Emit typing indicator
 			emitTyping(conversation.id, true);
 
-			// Generate new response
-			newContent = await generateChatCompletion(
-				conversationHistory,
-				character,
-				settings,
-				undefined, // no custom template
-				'swipe' // message type for logging
-			);
+			try {
+				// Generate new response
+				const result = await generateChatCompletion(
+					conversationHistory,
+					character,
+					settings,
+					'swipe' // message type for logging
+				);
+				newContent = result.content;
+				newReasoning = result.reasoning;
+			} catch (genError) {
+				// Stop typing indicator on generation error
+				emitTyping(conversation.id, false);
+				throw genError;
+			}
 
 			// Stop typing indicator
 			emitTyping(conversation.id, false);
 		}
 
-		// Parse existing swipes
+		// Parse existing swipes and reasoning arrays
 		const swipes = message.swipes ? JSON.parse(message.swipes) : [message.content];
+		// Get existing reasoning array or create with null for existing swipes
+		const existingReasoning: (string | null)[] = message.reasoning
+			? JSON.parse(message.reasoning)
+			: new Array(swipes.length).fill(null);
 
-		// Add new variant to swipes
+		// Add new variant to swipes and reasoning
 		swipes.push(newContent);
+		existingReasoning.push(newReasoning);
 
 		// Update message with new swipe
 		await db
@@ -165,11 +178,12 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 			.set({
 				swipes: JSON.stringify(swipes),
 				currentSwipe: swipes.length - 1,
-				content: newContent
+				content: newContent,
+				reasoning: JSON.stringify(existingReasoning)
 			})
 			.where(eq(messages.id, messageId));
 
-		return json({ success: true, content: newContent, swipeCount: swipes.length });
+		return json({ success: true, content: newContent, reasoning: newReasoning, swipeCount: swipes.length });
 	} catch (error) {
 		console.error('Failed to regenerate message:', error);
 		return json({ error: 'Failed to regenerate message' }, { status: 500 });

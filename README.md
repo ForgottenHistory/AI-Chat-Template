@@ -8,21 +8,61 @@ Derived from an AI dating app I made, check it out: https://github.com/Forgotten
 
 ## Features
 
+### Character System
+
 - **Character Cards** - Import V1/V2 character card formats with automatic image extraction from PNG metadata
-- **Multi-LLM Architecture** - Separate LLM configurations for different purposes:
-  - **Chat LLM** - Main conversation engine
-  - **Decision LLM** - Determines actions (e.g., when to send images)
-  - **Content LLM** - Rewrites/generates character metadata
-  - **Image LLM** - Generates Danbooru-style tags for image generation
-- **Stable Diffusion Integration** - Generate character images via local SD WebUI API
+- **Character Profile** - View and edit all character metadata with AI-powered rewrite functionality
 - **Per-Character Image Settings** - Customize image generation per character:
   - Always-included tags (appearance)
   - Contextual tags (AI chooses based on conversation)
   - Prompt overrides
-- **Conversation Management** - Multiple conversations per character with message history
+
+### User Identity
+
+- **User Personas** - Create multiple personas with custom names, descriptions, and avatars for roleplay
+- **Quick Persona Switching** - Switch between personas from the sidebar
+- **Profile Customization** - Set display name, bio, and avatar for your default profile
+
+### Chat Features
+
+- **Conversation Management** - Multiple conversations per character with full message history
 - **Swipes** - Generate alternative responses and swipe between them
 - **Impersonate** - Generate responses as the user character
+- **Reasoning Display** - View LLM reasoning/thinking when available
+- **QoL Buttons** - Quality of life features like quick copy
+
+### Layout & Appearance
+
+- **Chat Layouts** - Choose between bubble style (chat app) or Discord style (full-width rows)
+- **Avatar Styles** - Circle or rounded square avatars
+- **Dark Theme** - Consistent dark UI throughout
+
+### Multi-LLM Architecture
+
+Separate LLM configurations for different purposes:
+
+- **Chat LLM** - Main conversation engine
+- **Decision LLM** - Determines actions (e.g., when to send images), not used currently though
+- **Content LLM** - Rewrites/generates character metadata
+- **Image LLM** - Generates Danbooru-style tags for image generation
+
+### LLM Configuration
+
+- **LLM Presets** - Save and load LLM configurations
+- **Reasoning Support** - Enable extended thinking for supported models
+- **Provider Support** - OpenRouter and Featherless AI providers
+- **Per-Engine Settings** - Generic LLM settings component for temperature, max tokens, context window, etc
+
+### Image Generation
+
+- **Stable Diffusion Integration** - Generate character images via local SD WebUI API
+- **Global Tag Library** - Define tags available for AI to choose from. Creates interesting dynamic images. 
+- **ADetailer Support** - Optional face enhancement
+
+### Other Features
+
 - **File-Based Prompts** - Edit system prompts through the UI or directly in `data/prompts/`
+- **Logging** - View last 5 prompts/responses per LLM type for debugging
 
 ![AI Chat](images/character_profile.png)
 

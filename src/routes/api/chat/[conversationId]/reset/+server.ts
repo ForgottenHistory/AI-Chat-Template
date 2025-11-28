@@ -53,7 +53,9 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 						role: 'assistant',
 						content: firstMessage.trim(),
 						swipes: swipes.length > 1 ? JSON.stringify(swipes) : null,
-						currentSwipe: 0
+						currentSwipe: 0,
+						senderName: character.name,
+						senderAvatar: character.thumbnailData || character.imageData
 					});
 				}
 			} catch (parseError) {

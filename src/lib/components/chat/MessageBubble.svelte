@@ -2,6 +2,7 @@
 	import type { Message } from '$lib/server/db/schema';
 	import ChatMessage from '$lib/components/ChatMessage.svelte';
 	import MessageControls from './MessageControls.svelte';
+	import ReasoningModal from './ReasoningModal.svelte';
 
 	interface Props {
 		message: Message;
@@ -17,12 +18,29 @@
 
 	let { message, index, isLast, charName, userName, generating, onSwipe, onSaveEdit, onDelete }: Props = $props();
 
+	// Reasoning modal state
+	let showReasoningModal = $state(false);
+	let currentReasoning = $derived(() => {
+		if (!message.reasoning) return '';
+		// Try parsing as array (for swipes)
+		try {
+			const reasoningArray = JSON.parse(message.reasoning);
+			if (Array.isArray(reasoningArray)) {
+				const currentIndex = message.currentSwipe ?? 0;
+				return reasoningArray[currentIndex] || '';
+			}
+		} catch {
+			// Not JSON array, treat as plain string
+		}
+		return message.reasoning;
+	});
+
 	let isUser = $derived(message.role === 'user');
 	let showSwipeControls = $derived(message.role === 'assistant' && isLast);
 	let showGeneratingPlaceholder = $derived(generating && isLast && message.role === 'assistant');
 
-	// Display info
-	let displayName = $derived(isUser ? (userName || 'User') : (charName || 'Assistant'));
+	// Display info - prefer stored sender info, fall back to current names
+	let displayName = $derived(message.senderName || (isUser ? (userName || 'User') : (charName || 'Assistant')));
 
 	// Format timestamp
 	let timestamp = $derived(() => {
@@ -150,7 +168,10 @@
 			{onSwipe}
 			onEdit={startEdit}
 			{onDelete}
+			onShowReasoning={() => showReasoningModal = true}
 			disabled={isEditing || generating}
 		/>
 	</div>
 </div>
+
+<ReasoningModal bind:show={showReasoningModal} reasoning={currentReasoning()} />

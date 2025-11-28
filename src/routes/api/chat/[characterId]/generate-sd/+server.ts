@@ -110,7 +110,9 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
 			.values({
 				conversationId: conversation.id,
 				role: 'assistant',
-				content: imageContent
+				content: imageContent,
+				senderName: character.name,
+				senderAvatar: character.thumbnailData || character.imageData
 			})
 			.returning();
 

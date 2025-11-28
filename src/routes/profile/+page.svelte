@@ -342,8 +342,8 @@
 								? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]'
 								: 'bg-[var(--bg-secondary)] border-[var(--border-primary)] hover:border-[var(--accent-primary)]/50'}"
 					>
-						{#if data.user.avatarData}
-							<img src={data.user.avatarData} alt="Profile" class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+						{#if data.user.avatarThumbnail || data.user.avatarData}
+							<img src={data.user.avatarThumbnail || data.user.avatarData} alt="Profile" class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
 						{:else}
 							<div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white font-bold flex-shrink-0">
 								{data.user.displayName.charAt(0).toUpperCase()}
@@ -372,8 +372,8 @@
 										? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]'
 										: 'bg-[var(--bg-secondary)] border-[var(--border-primary)] hover:border-[var(--accent-primary)]/50'}"
 							>
-								{#if persona.avatarData}
-									<img src={persona.avatarData} alt={persona.name} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+								{#if persona.avatarThumbnail || persona.avatarData}
+									<img src={persona.avatarThumbnail || persona.avatarData} alt={persona.name} class="w-10 h-10 rounded-full object-cover flex-shrink-0" />
 								{:else}
 									<div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-white font-bold flex-shrink-0">
 										{persona.name.charAt(0).toUpperCase()}
@@ -458,8 +458,8 @@
 							<div class="relative -mt-12 mb-4">
 								{#if isEditing}
 									<label class="inline-block cursor-pointer group">
-										{#if avatarPreview || data.user.avatarData}
-											<img src={avatarPreview || data.user.avatarData} alt="Profile" class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg object-cover group-hover:opacity-75 transition" />
+										{#if avatarPreview || data.user.avatarThumbnail || data.user.avatarData}
+											<img src={avatarPreview || data.user.avatarThumbnail || data.user.avatarData} alt="Profile" class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg object-cover group-hover:opacity-75 transition" />
 										{:else}
 											<div class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white text-3xl font-bold group-hover:opacity-75 transition">
 												{data.user.displayName.charAt(0).toUpperCase()}
@@ -468,8 +468,8 @@
 										<input type="file" accept="image/*" class="hidden" onchange={handleAvatarSelect} />
 									</label>
 								{:else}
-									{#if data.user.avatarData}
-										<img src={data.user.avatarData} alt="Profile" class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg object-cover" />
+									{#if data.user.avatarThumbnail || data.user.avatarData}
+										<img src={data.user.avatarThumbnail || data.user.avatarData} alt="Profile" class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg object-cover" />
 									{:else}
 										<div class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white text-3xl font-bold">
 											{data.user.displayName.charAt(0).toUpperCase()}
@@ -545,8 +545,8 @@
 										<input type="file" accept="image/*" class="hidden" onchange={(e) => handlePersonaAvatarSelect(e, false)} />
 									</label>
 								{:else}
-									{#if selectedPersona.avatarData}
-										<img src={selectedPersona.avatarData} alt={selectedPersona.name} class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg object-cover" />
+									{#if selectedPersona.avatarThumbnail || selectedPersona.avatarData}
+										<img src={selectedPersona.avatarThumbnail || selectedPersona.avatarData} alt={selectedPersona.name} class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg object-cover" />
 									{:else}
 										<div class="w-24 h-24 rounded-full border-4 border-[var(--bg-secondary)] shadow-lg bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)] flex items-center justify-center text-white text-3xl font-bold">
 											{selectedPersona.name.charAt(0).toUpperCase()}

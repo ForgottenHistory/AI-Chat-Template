@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { personaService } from '$lib/server/services/personaService';
 
 export const GET: RequestHandler = async ({ cookies }) => {
 	const userId = cookies.get('userId');
@@ -18,10 +19,14 @@ export const GET: RequestHandler = async ({ cookies }) => {
 		return json({ error: 'User not found' }, { status: 404 });
 	}
 
+	// Get active persona info (name, description, avatar)
+	const activeUserInfo = await personaService.getActiveUserInfo(parseInt(userId));
+
 	return json({
 		chatLayout: user.chatLayout || 'bubbles',
 		avatarStyle: user.avatarStyle || 'circle',
-		userAvatar: user.avatarData || null
+		userAvatar: activeUserInfo.avatarData || null,
+		userName: activeUserInfo.name
 	});
 };
 

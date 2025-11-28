@@ -3,8 +3,9 @@ import { db } from '$lib/server/db';
 import { messages, conversations, characters, llmSettings } from '$lib/server/db/schema';
 import { eq, and, lt } from 'drizzle-orm';
 import { generateChatCompletion } from '$lib/server/llm';
+import { emitMessage, emitTyping } from '$lib/server/socket';
 
-// POST - Regenerate message fresh (wipe all variants and create new one)
+// POST - Regenerate message fresh (delete old message and create completely new one)
 export const POST: RequestHandler = async ({ params, cookies }) => {
 	const userId = cookies.get('userId');
 	if (!userId) {
@@ -53,7 +54,7 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 			return json({ error: 'Character not found' }, { status: 404 });
 		}
 
-		// Get conversation history up to this message
+		// Get conversation history up to this message (excluding the message being regenerated)
 		const conversationHistory = await db
 			.select()
 			.from(messages)
@@ -74,26 +75,47 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 			return json({ error: 'LLM settings not found' }, { status: 404 });
 		}
 
-		// Generate new response
-		const newContent = await generateChatCompletion(
-			conversationHistory,
-			character,
-			settings,
-			undefined, // no custom template
-			'regenerate' // message type for logging
-		);
+		// Delete the old message
+		await db.delete(messages).where(eq(messages.id, messageId));
 
-		// Wipe all variants and create fresh one
-		await db
-			.update(messages)
-			.set({
-				swipes: null,
-				currentSwipe: 0,
-				content: newContent
+		// Emit typing indicator
+		emitTyping(conversation.id, true);
+
+		let result: { content: string; reasoning: string | null };
+		try {
+			// Generate new response
+			result = await generateChatCompletion(
+				conversationHistory,
+				character,
+				settings,
+				'regenerate' // message type for logging
+			);
+		} catch (genError) {
+			// Stop typing indicator on generation error
+			emitTyping(conversation.id, false);
+			throw genError;
+		}
+
+		// Stop typing indicator
+		emitTyping(conversation.id, false);
+
+		// Create completely new message
+		const [newMessage] = await db
+			.insert(messages)
+			.values({
+				conversationId: conversation.id,
+				role: 'assistant',
+				content: result.content,
+				senderName: character.name,
+				senderAvatar: character.thumbnailData || character.imageData,
+				reasoning: result.reasoning
 			})
-			.where(eq(messages.id, messageId));
+			.returning();
 
-		return json({ success: true, content: newContent });
+		// Emit new message via Socket.IO
+		emitMessage(conversation.id, newMessage);
+
+		return json({ success: true, content: result.content, message: newMessage });
 	} catch (error) {
 		console.error('Failed to regenerate message fresh:', error);
 		return json({ error: 'Failed to regenerate message' }, { status: 500 });

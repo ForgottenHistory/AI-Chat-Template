@@ -213,9 +213,9 @@
 								alt={activePersona.name}
 								class="relative w-10 h-10 rounded-full object-cover shadow-md"
 							/>
-						{:else if user.avatarData && !activePersona?.personaId}
+						{:else if (user.avatarThumbnail || user.avatarData) && !activePersona?.personaId}
 							<img
-								src={user.avatarData}
+								src={user.avatarThumbnail || user.avatarData}
 								alt={user.displayName}
 								class="relative w-10 h-10 rounded-full object-cover shadow-md"
 							/>

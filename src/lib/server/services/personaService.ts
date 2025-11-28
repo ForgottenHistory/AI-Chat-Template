@@ -2,6 +2,31 @@ import { db } from '../db';
 import { users, userPersonas } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { UserPersona, NewUserPersona } from '../db/schema';
+import sharp from 'sharp';
+
+/**
+ * Generate a thumbnail from base64 image data
+ */
+async function generateThumbnail(base64Data: string): Promise<string | null> {
+	try {
+		// Extract the actual base64 content (remove data:image/...;base64, prefix)
+		const matches = base64Data.match(/^data:image\/(\w+);base64,(.+)$/);
+		if (!matches) return null;
+
+		const imageBuffer = Buffer.from(matches[2], 'base64');
+
+		// Generate thumbnail (128x170 to match character thumbnails)
+		const thumbnailBuffer = await sharp(imageBuffer)
+			.resize(128, 170, { fit: 'cover' })
+			.png({ quality: 80 })
+			.toBuffer();
+
+		return `data:image/png;base64,${thumbnailBuffer.toString('base64')}`;
+	} catch (error) {
+		console.warn('Failed to generate avatar thumbnail:', error);
+		return null;
+	}
+}
 
 class PersonaService {
 	/**
@@ -48,6 +73,7 @@ class PersonaService {
 	/**
 	 * Get the display name and description to use for the user
 	 * Returns active persona info if set, otherwise user profile info
+	 * avatarData returns the thumbnail if available, falling back to full image
 	 */
 	async getActiveUserInfo(userId: number): Promise<{ name: string; description: string | null; avatarData: string | null }> {
 		const [user] = await db
@@ -66,7 +92,7 @@ class PersonaService {
 				return {
 					name: persona.name,
 					description: persona.description,
-					avatarData: persona.avatarData
+					avatarData: persona.avatarThumbnail || persona.avatarData
 				};
 			}
 		}
@@ -74,7 +100,7 @@ class PersonaService {
 		return {
 			name: user.displayName,
 			description: user.bio,
-			avatarData: user.avatarData
+			avatarData: user.avatarThumbnail || user.avatarData
 		};
 	}
 
@@ -85,13 +111,19 @@ class PersonaService {
 		userId: number,
 		data: { name: string; description?: string; avatarData?: string }
 	): Promise<UserPersona> {
+		let avatarThumbnail: string | null = null;
+		if (data.avatarData) {
+			avatarThumbnail = await generateThumbnail(data.avatarData);
+		}
+
 		const [persona] = await db
 			.insert(userPersonas)
 			.values({
 				userId,
 				name: data.name,
 				description: data.description || null,
-				avatarData: data.avatarData || null
+				avatarData: data.avatarData || null,
+				avatarThumbnail
 			})
 			.returning();
 
@@ -106,9 +138,22 @@ class PersonaService {
 		userId: number,
 		data: { name?: string; description?: string; avatarData?: string }
 	): Promise<UserPersona | null> {
+		const updateData: any = { ...data };
+
+		// Generate thumbnail if avatar is being updated
+		if (data.avatarData) {
+			const thumbnail = await generateThumbnail(data.avatarData);
+			if (thumbnail) {
+				updateData.avatarThumbnail = thumbnail;
+			}
+		} else if (data.avatarData === null) {
+			// If avatar is being cleared, clear thumbnail too
+			updateData.avatarThumbnail = null;
+		}
+
 		const [updated] = await db
 			.update(userPersonas)
-			.set(data)
+			.set(updateData)
 			.where(and(eq(userPersonas.id, personaId), eq(userPersonas.userId, userId)))
 			.returning();
 

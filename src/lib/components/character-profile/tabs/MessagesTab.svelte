@@ -32,6 +32,48 @@
 	let addingGreeting = $state(false);
 	let deletingGreetingIndex = $state<number | null>(null);
 
+	// Copy states
+	let copiedFirstMes = $state(false);
+	let copiedMesExample = $state(false);
+	let copiedGreetingIndex = $state<number | null>(null);
+
+	async function copyField(field: 'first_mes' | 'mes_example' | 'greeting', index?: number) {
+		let content = '';
+		switch (field) {
+			case 'first_mes':
+				content = data.first_mes || '';
+				break;
+			case 'mes_example':
+				content = data.mes_example || '';
+				break;
+			case 'greeting':
+				content = data.alternate_greetings?.[index!] || '';
+				break;
+		}
+
+		if (!content) return;
+
+		try {
+			await navigator.clipboard.writeText(content);
+			switch (field) {
+				case 'first_mes':
+					copiedFirstMes = true;
+					setTimeout(() => (copiedFirstMes = false), 2000);
+					break;
+				case 'mes_example':
+					copiedMesExample = true;
+					setTimeout(() => (copiedMesExample = false), 2000);
+					break;
+				case 'greeting':
+					copiedGreetingIndex = index!;
+					setTimeout(() => (copiedGreetingIndex = null), 2000);
+					break;
+			}
+		} catch (err) {
+			console.error('Failed to copy:', err);
+		}
+	}
+
 	// Rewrite states
 	let rewritingFirstMes = $state(false);
 	let rewritingMesExample = $state(false);
@@ -227,6 +269,23 @@
 			<h4 class="text-sm font-medium text-[var(--text-secondary)]">First Message</h4>
 			{#if !editingFirstMes}
 				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+					{#if data.first_mes}
+					<button
+						onclick={() => copyField('first_mes')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						title="Copy to clipboard"
+					>
+						{#if copiedFirstMes}
+							<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							</svg>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						{/if}
+					</button>
+					{/if}
 					<button
 						onclick={rewriteFirstMes}
 						disabled={rewritingFirstMes || !data.first_mes}
@@ -351,11 +410,28 @@
 				</div>
 			</div>
 		{:else}
-			<div class="flex items-start justify-between gap-2">
+			<div class="flex items-start justify-between gap-2 group">
 				<div class="text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed font-mono text-sm flex-1">
 					{data.mes_example || 'No message example available'}
 				</div>
-				<div class="flex items-center gap-1 flex-shrink-0">
+				<div class="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition">
+					{#if data.mes_example}
+					<button
+						onclick={() => copyField('mes_example')}
+						class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-lg transition"
+						title="Copy to clipboard"
+					>
+						{#if copiedMesExample}
+							<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+							</svg>
+						{:else}
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						{/if}
+					</button>
+					{/if}
 					<button
 						onclick={rewriteMesExample}
 						disabled={rewritingMesExample || !data.mes_example}
@@ -399,6 +475,23 @@
 							<span class="text-xs font-medium text-[var(--text-muted)]">Greeting {index + 2}</span>
 							{#if editingGreetingIndex !== index}
 								<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+									{#if greeting}
+									<button
+										onclick={() => copyField('greeting', index)}
+										class="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition"
+										title="Copy to clipboard"
+									>
+										{#if copiedGreetingIndex === index}
+											<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+											</svg>
+										{:else}
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+											</svg>
+										{/if}
+									</button>
+									{/if}
 									<button
 										onclick={() => rewriteGreeting(index)}
 										disabled={rewritingGreetingIndex === index || !greeting}

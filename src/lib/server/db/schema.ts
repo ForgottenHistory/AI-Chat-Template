@@ -6,7 +6,8 @@ export const users = sqliteTable('users', {
 	displayName: text('display_name').notNull(),
 	passwordHash: text('password_hash').notNull(),
 	bio: text('bio'),
-	avatarData: text('avatar_data'), // Base64 image data
+	avatarData: text('avatar_data'), // Base64 image data (full size)
+	avatarThumbnail: text('avatar_thumbnail'), // Base64 thumbnail for chat messages
 	activePersonaId: integer('active_persona_id'), // Currently active persona (null = use user profile)
 	chatLayout: text('chat_layout').notNull().default('bubbles'), // 'bubbles' (chat app style) or 'discord' (full-width rows)
 	avatarStyle: text('avatar_style').notNull().default('circle'), // 'circle' or 'rounded' (rounded square)
@@ -22,7 +23,8 @@ export const userPersonas = sqliteTable('user_personas', {
 		.references(() => users.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(),
 	description: text('description'), // Description/bio for this persona
-	avatarData: text('avatar_data'), // Base64 image data for persona
+	avatarData: text('avatar_data'), // Base64 image data for persona (full size)
+	avatarThumbnail: text('avatar_thumbnail'), // Base64 thumbnail for chat messages
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())
@@ -209,6 +211,9 @@ export const messages = sqliteTable('messages', {
 	content: text('content').notNull(),
 	swipes: text('swipes'), // JSON array of alternative content variants
 	currentSwipe: integer('current_swipe').default(0), // Index of currently selected swipe
+	senderName: text('sender_name'), // Display name at time of message (persona or user profile)
+	senderAvatar: text('sender_avatar'), // Avatar data at time of message
+	reasoning: text('reasoning'), // LLM reasoning/thinking content (if available)
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())

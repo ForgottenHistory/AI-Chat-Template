@@ -24,6 +24,10 @@ interface ChatCompletionResponse {
 		completion_tokens: number;
 		total_tokens: number;
 	};
+	// Include choices for reasoning extraction in logs
+	choices?: any[];
+	// Reasoning content if available
+	reasoning?: string | null;
 }
 
 interface ProviderConfig {
@@ -119,7 +123,8 @@ class LlmService {
 			model: selectedModel,
 			temperature: selectedTemperature,
 			max_tokens: selectedMaxTokens,
-			messageCount: messages.length
+			messageCount: messages.length,
+			reasoningEnabled: userSettings.reasoningEnabled
 		});
 
 		// Build request body
@@ -136,7 +141,7 @@ class LlmService {
 		// Add reasoning parameter if enabled (OpenRouter only)
 		if (userSettings.reasoningEnabled && provider === 'openrouter') {
 			requestBody.reasoning = {
-				enabled: true
+				effort: 'medium'
 			};
 		}
 
@@ -180,7 +185,19 @@ class LlmService {
 				const message = response.data.choices[0].message;
 				let content = message.content || '';
 
-				// Strip any <think></think> tags (reasoning output)
+				// Extract reasoning content from various possible locations
+				let reasoning: string | null = null;
+				if (message.reasoning) {
+					reasoning = message.reasoning;
+				} else if (message.reasoning_content) {
+					reasoning = message.reasoning_content;
+				}
+
+				// Strip any <think></think> tags (reasoning output) - extract first if present
+				const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/i);
+				if (thinkMatch && !reasoning) {
+					reasoning = thinkMatch[1].trim();
+				}
 				content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 				content = content.replace(/<\/?think>/gi, '').trim();
 
@@ -197,13 +214,16 @@ class LlmService {
 					provider,
 					model: response.data.model,
 					contentLength: content?.length || 0,
+					reasoningLength: reasoning?.length || 0,
 					usage: response.data.usage
 				});
 
 				return {
 					content,
 					model: response.data.model,
-					usage: response.data.usage
+					usage: response.data.usage,
+					choices: response.data.choices,
+					reasoning
 				};
 			} catch (error: any) {
 				lastError = error;

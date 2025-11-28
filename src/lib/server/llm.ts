@@ -72,20 +72,25 @@ function replaceTemplateVariables(
 		.replace(/\{\{description\}\}/g, variables.description);
 }
 
+interface ChatCompletionResult {
+	content: string;
+	reasoning: string | null;
+}
+
 /**
  * Generate a chat completion for a character conversation
  * @param conversationHistory - Array of previous messages in the conversation
  * @param character - Character card data
  * @param settings - User's LLM settings
  * @param messageType - Type of message for logging ('chat', 'regenerate', 'swipe')
- * @returns Generated assistant message content
+ * @returns Generated assistant message content and reasoning
  */
 export async function generateChatCompletion(
 	conversationHistory: Message[],
 	character: Character,
 	settings: LlmSettings,
 	messageType: string = 'chat'
-): Promise<string> {
+): Promise<ChatCompletionResult> {
 	// Parse character card data
 	let characterData: any = {};
 	try {
@@ -174,13 +179,17 @@ export async function generateChatCompletion(
 		character: character.name,
 		model: response.model,
 		contentLength: response.content.length,
+		reasoningLength: response.reasoning?.length || 0,
 		tokensUsed: response.usage?.total_tokens
 	});
 
 	// Log response for debugging (matching ID to prompt)
 	llmLogService.saveResponseLog(response.content, response.content, messageType, logId, response);
 
-	return response.content;
+	return {
+		content: response.content,
+		reasoning: response.reasoning || null
+	};
 }
 
 /**

@@ -34,6 +34,7 @@
 	let chatLayout = $state<'bubbles' | 'discord'>('bubbles');
 	let avatarStyle = $state<'circle' | 'rounded'>('circle');
 	let userAvatar = $state<string | null>(null);
+	let userName = $state<string | null>(null);
 
 	// Image generation modal state
 	let showImageModal = $state(false);
@@ -92,9 +93,16 @@
 		};
 		window.addEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
 
+		// Listen for persona changes to update user name/avatar
+		const handlePersonaUpdate = () => {
+			loadSettings();
+		};
+		window.addEventListener('personaUpdated', handlePersonaUpdate);
+
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
 			window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
+			window.removeEventListener('personaUpdated', handlePersonaUpdate);
 		};
 	});
 
@@ -125,6 +133,7 @@
 				chatLayout = result.chatLayout || 'bubbles';
 				avatarStyle = result.avatarStyle || 'circle';
 				userAvatar = result.userAvatar || null;
+				userName = result.userName || null;
 			}
 		} catch (error) {
 			console.error('Failed to load settings:', error);
@@ -451,21 +460,26 @@
 		const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
 		if (!lastAssistantMessage) return;
 
-		const confirmed = confirm('This will delete all existing variants and generate a fresh response. Continue?');
-		if (!confirmed) return;
+		// Remove the message from UI immediately
+		const messageIndex = messages.findIndex(m => m.id === lastAssistantMessage.id);
+		if (messageIndex !== -1) {
+			messages = messages.slice(0, messageIndex);
+		}
 
 		try {
 			const response = await fetch(`/api/chat/messages/${lastAssistantMessage.id}/regenerate-fresh`, {
 				method: 'POST'
 			});
 
-			if (response.ok) {
+			if (!response.ok) {
+				// Reload conversation to restore state on error
 				await loadConversation();
-			} else {
 				alert('Failed to regenerate message');
 			}
+			// New message will arrive via Socket.IO
 		} catch (error) {
 			console.error('Failed to regenerate message:', error);
+			await loadConversation();
 			alert('Failed to regenerate message');
 		}
 	}
@@ -601,7 +615,7 @@
 				{isTyping}
 				generating={regenerating}
 				charName={character?.name}
-				userName={data.user?.displayName}
+				userName={userName || data.user?.displayName}
 				charAvatar={character?.thumbnailData || character?.imageData}
 				{userAvatar}
 				{chatLayout}
