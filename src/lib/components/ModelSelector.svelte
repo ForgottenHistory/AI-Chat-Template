@@ -9,10 +9,11 @@
 
 	interface Props {
 		selectedModel: string;
+		provider?: string;
 		onSelect: (modelId: string) => void;
 	}
 
-	let { selectedModel, onSelect }: Props = $props();
+	let { selectedModel, provider = 'openrouter', onSelect }: Props = $props();
 
 	let models = $state<Model[]>([]);
 	let filteredModels = $state<Model[]>([]);
@@ -20,9 +21,11 @@
 	let isOpen = $state(false);
 	let loading = $state(true);
 
-	// Load models on mount
+	// Load models on mount and when provider changes
 	$effect(() => {
-		loadModels();
+		// Access provider to track it as a dependency
+		const currentProvider = provider;
+		loadModels(currentProvider);
 	});
 
 	// Filter models when search changes
@@ -40,10 +43,11 @@
 		}
 	});
 
-	async function loadModels() {
+	async function loadModels(currentProvider: string) {
 		loading = true;
 		try {
-			const response = await fetch('/api/llm/models');
+			// Add timestamp to prevent caching issues
+			const response = await fetch(`/api/llm/models?provider=${currentProvider}&_t=${Date.now()}`);
 			const data = await response.json();
 			models = data.models || [];
 			filteredModels = models;

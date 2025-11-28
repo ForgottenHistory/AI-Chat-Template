@@ -133,11 +133,18 @@ class LlmService {
 			presence_penalty: userSettings.presencePenalty
 		};
 
-		// Add reasoning parameter if enabled
-		if (userSettings.reasoningEnabled) {
+		// Add reasoning parameter if enabled (OpenRouter only)
+		if (userSettings.reasoningEnabled && provider === 'openrouter') {
 			requestBody.reasoning = {
 				enabled: true
 			};
+		}
+
+		// Add Featherless-specific parameters
+		if (provider === 'featherless') {
+			requestBody.repetition_penalty = userSettings.repetitionPenalty ?? 1.0;
+			requestBody.top_k = userSettings.topK ?? -1;
+			requestBody.min_p = userSettings.minP ?? 0.0;
 		}
 
 		// Retry logic with exponential backoff

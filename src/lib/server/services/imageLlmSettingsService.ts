@@ -8,14 +8,18 @@ import type { ImageLlmSettings } from '../db/schema';
  */
 const DEFAULT_SETTINGS = {
 	provider: 'openrouter',
-	model: 'openai/dall-e-3',
+	model: 'openai/gpt-4o-mini',
 	temperature: 1.0,
 	maxTokens: 1000,
 	topP: 1.0,
 	frequencyPenalty: 0.0,
 	presencePenalty: 0.0,
 	contextWindow: 4000,
-	reasoningEnabled: false
+	reasoningEnabled: false,
+	// Featherless-specific parameters
+	topK: -1,
+	minP: 0.0,
+	repetitionPenalty: 1.0
 };
 
 class ImageLlmSettingsService {

@@ -25,7 +25,11 @@ export const llmSettings = sqliteTable('llm_settings', {
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
 	contextWindow: integer('context_window').notNull().default(8000),
-	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false),
+	// Featherless-specific parameters
+	topK: integer('top_k').notNull().default(-1), // -1 means disabled
+	minP: real('min_p').notNull().default(0.0),
+	repetitionPenalty: real('repetition_penalty').notNull().default(1.0)
 });
 
 export const decisionEngineSettings = sqliteTable('decision_engine_settings', {
@@ -41,7 +45,11 @@ export const decisionEngineSettings = sqliteTable('decision_engine_settings', {
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
 	contextWindow: integer('context_window').notNull().default(4000),
-	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false),
+	// Featherless-specific parameters
+	topK: integer('top_k').notNull().default(-1),
+	minP: real('min_p').notNull().default(0.0),
+	repetitionPenalty: real('repetition_penalty').notNull().default(1.0)
 });
 
 export const contentLlmSettings = sqliteTable('content_llm_settings', {
@@ -57,7 +65,11 @@ export const contentLlmSettings = sqliteTable('content_llm_settings', {
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
 	contextWindow: integer('context_window').notNull().default(16000),
-	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false),
+	// Featherless-specific parameters
+	topK: integer('top_k').notNull().default(-1),
+	minP: real('min_p').notNull().default(0.0),
+	repetitionPenalty: real('repetition_penalty').notNull().default(1.0)
 });
 
 export const imageLlmSettings = sqliteTable('image_llm_settings', {
@@ -66,14 +78,18 @@ export const imageLlmSettings = sqliteTable('image_llm_settings', {
 		.notNull()
 		.references(() => users.id, { onDelete: 'cascade' }),
 	provider: text('provider').notNull().default('openrouter'),
-	model: text('model').notNull().default('openai/dall-e-3'),
+	model: text('model').notNull().default('openai/gpt-4o-mini'),
 	temperature: real('temperature').notNull().default(1.0),
 	maxTokens: integer('max_tokens').notNull().default(1000),
 	topP: real('top_p').notNull().default(1.0),
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
 	contextWindow: integer('context_window').notNull().default(4000),
-	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false),
+	// Featherless-specific parameters
+	topK: integer('top_k').notNull().default(-1),
+	minP: real('min_p').notNull().default(0.0),
+	repetitionPenalty: real('repetition_penalty').notNull().default(1.0)
 });
 
 export const sdSettings = sqliteTable('sd_settings', {
@@ -113,6 +129,10 @@ export const llmPresets = sqliteTable('llm_presets', {
 	presencePenalty: real('presence_penalty').notNull(),
 	contextWindow: integer('context_window').notNull(),
 	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false),
+	// Featherless-specific parameters
+	topK: integer('top_k').notNull().default(-1),
+	minP: real('min_p').notNull().default(0.0),
+	repetitionPenalty: real('repetition_penalty').notNull().default(1.0),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())

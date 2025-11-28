@@ -15,7 +15,11 @@ const DEFAULT_SETTINGS = {
 	frequencyPenalty: 0.0,
 	presencePenalty: 0.0,
 	contextWindow: 8000,
-	reasoningEnabled: false
+	reasoningEnabled: false,
+	// Featherless-specific parameters
+	topK: -1,
+	minP: 0.0,
+	repetitionPenalty: 1.0
 };
 
 class LlmSettingsService {

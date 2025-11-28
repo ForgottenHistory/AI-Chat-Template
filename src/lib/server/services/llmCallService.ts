@@ -14,6 +14,10 @@ interface LlmCallParams {
 		frequencyPenalty: number;
 		presencePenalty: number;
 		reasoningEnabled?: boolean;
+		// Featherless-specific parameters
+		topK?: number;
+		minP?: number;
+		repetitionPenalty?: number;
 	};
 	logType: string;
 	logCharacterName?: string;
@@ -28,9 +32,56 @@ interface LlmCallResult {
 	usage: any;
 }
 
+interface ProviderConfig {
+	apiKey: string | undefined;
+	baseUrl: string;
+	name: string;
+}
+
+/**
+ * Get provider configuration (API key and base URL) for a given provider
+ */
+function getProviderConfig(provider: string): ProviderConfig {
+	const normalized = provider?.toLowerCase() || 'openrouter';
+
+	switch (normalized) {
+		case 'featherless':
+			return {
+				apiKey: env.FEATHERLESS_API_KEY,
+				baseUrl: 'https://api.featherless.ai/v1',
+				name: 'Featherless'
+			};
+		case 'openrouter':
+		default:
+			return {
+				apiKey: env.OPENROUTER_API_KEY,
+				baseUrl: 'https://openrouter.ai/api/v1',
+				name: 'OpenRouter'
+			};
+	}
+}
+
+/**
+ * Check if an error is retryable
+ */
+function isRetryableError(error: any): boolean {
+	const status = error.response?.status;
+	const code = error.code;
+	return status === 429 || status === 500 || status === 502 || status === 503 || status === 504 ||
+		code === 'ECONNRESET' || code === 'ETIMEDOUT' || code === 'ECONNREFUSED';
+}
+
+/**
+ * Sleep helper
+ */
+function sleep(ms: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * Shared LLM call function used by all LLM services
  * Handles: request building, reasoning parameter, queueing, response processing, logging, error handling
+ * Supports both OpenRouter and Featherless providers
  */
 export async function callLlm({
 	messages,
@@ -40,6 +91,13 @@ export async function callLlm({
 	logUserName = 'System',
 	timeout = 120000
 }: LlmCallParams): Promise<LlmCallResult> {
+	const provider = settings.provider || 'openrouter';
+	const providerConfig = getProviderConfig(provider);
+
+	if (!providerConfig.apiKey) {
+		throw new Error(`${providerConfig.name} API key not configured`);
+	}
+
 	const requestBody: any = {
 		model: settings.model,
 		messages,
@@ -50,11 +108,18 @@ export async function callLlm({
 		presence_penalty: settings.presencePenalty
 	};
 
-	// Add reasoning parameter if enabled
-	if (settings.reasoningEnabled) {
+	// Add reasoning parameter if enabled (OpenRouter only)
+	if (settings.reasoningEnabled && provider === 'openrouter') {
 		requestBody.reasoning = {
 			enabled: true
 		};
+	}
+
+	// Add Featherless-specific parameters
+	if (provider === 'featherless') {
+		requestBody.repetition_penalty = settings.repetitionPenalty ?? 1.0;
+		requestBody.top_k = settings.topK ?? -1;
+		requestBody.min_p = settings.minP ?? 0.0;
 	}
 
 	// Log prompt
@@ -65,21 +130,51 @@ export async function callLlm({
 		logUserName
 	);
 
-	const response = await queueService.enqueue(settings.provider, async () => {
-		return await axios.post(
-			'https://openrouter.ai/api/v1/chat/completions',
-			requestBody,
-			{
-				headers: {
-					Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-					'Content-Type': 'application/json',
-					'HTTP-Referer': 'https://localhost:5173',
-					'X-Title': 'AI-Chat-Template'
-				},
-				timeout
+	// Execute request with retry logic
+	const maxRetries = 3;
+	let lastError: any = null;
+	let response: any = null;
+
+	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+		try {
+			response = await queueService.enqueue(provider, async () => {
+				return await axios.post(
+					`${providerConfig.baseUrl}/chat/completions`,
+					requestBody,
+					{
+						headers: {
+							Authorization: `Bearer ${providerConfig.apiKey}`,
+							'Content-Type': 'application/json',
+							'HTTP-Referer': 'https://localhost:5173',
+							'X-Title': 'AI-Chat-Template'
+						},
+						timeout
+					}
+				);
+			});
+
+			// Success
+			if (attempt > 0) {
+				console.log(`✅ ${providerConfig.name} request succeeded after ${attempt} retries`);
 			}
-		);
-	});
+			break;
+		} catch (error: any) {
+			lastError = error;
+
+			if (attempt < maxRetries && isRetryableError(error)) {
+				const delayMs = Math.pow(2, attempt + 1) * 1000;
+				console.warn(`⚠️ ${providerConfig.name} request failed (${error.response?.status || error.code}), retrying in ${delayMs}ms... (attempt ${attempt + 1}/${maxRetries})`);
+				await sleep(delayMs);
+				continue;
+			}
+
+			throw error;
+		}
+	}
+
+	if (!response) {
+		throw new Error(lastError?.response?.data?.error?.message || lastError?.message || `${providerConfig.name} service error after ${maxRetries} retries`);
+	}
 
 	const rawContent = response.data.choices[0].message.content || '';
 	let content = rawContent;

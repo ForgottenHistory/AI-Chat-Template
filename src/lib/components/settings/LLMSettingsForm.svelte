@@ -11,6 +11,10 @@
 		presencePenalty: number;
 		contextWindow: number;
 		reasoningEnabled?: boolean;
+		// Featherless-specific parameters
+		topK?: number;
+		minP?: number;
+		repetitionPenalty?: number;
 	}
 
 	let {
@@ -43,7 +47,7 @@
 			class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 		>
 			<option value="openrouter">OpenRouter</option>
-			<option value="featherless" disabled>Featherless (Coming Soon)</option>
+			<option value="featherless">Featherless</option>
 		</select>
 	</div>
 
@@ -52,6 +56,7 @@
 		<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Model</label>
 		<ModelSelector
 			selectedModel={settings.model}
+			provider={settings.provider}
 			onSelect={(modelId) => (settings.model = modelId)}
 		/>
 	</div>
@@ -102,23 +107,86 @@
 		<p class="text-xs text-[var(--text-muted)] mt-1">Total tokens available for context</p>
 	</div>
 
-	<!-- Reasoning -->
-	<div class="flex items-center justify-between p-4 bg-[var(--bg-tertiary)] rounded-xl">
-		<div>
-			<label class="block text-sm font-medium text-[var(--text-primary)]">Extended Thinking</label>
-			<p class="text-xs text-[var(--text-muted)] mt-1">
-				Enable reasoning for models that support it (OpenRouter)
-			</p>
+	<!-- Reasoning (OpenRouter only) -->
+	{#if settings.provider === 'openrouter'}
+		<div class="flex items-center justify-between p-4 bg-[var(--bg-tertiary)] rounded-xl">
+			<div>
+				<label class="block text-sm font-medium text-[var(--text-primary)]">Extended Thinking</label>
+				<p class="text-xs text-[var(--text-muted)] mt-1">
+					Enable reasoning for models that support it (OpenRouter)
+				</p>
+			</div>
+			<label class="relative inline-flex items-center cursor-pointer">
+				<input
+					type="checkbox"
+					bind:checked={settings.reasoningEnabled}
+					class="sr-only peer"
+				/>
+				<div class="w-11 h-6 bg-[var(--bg-secondary)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--accent-primary)]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[var(--border-primary)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--accent-primary)]"></div>
+			</label>
 		</div>
-		<label class="relative inline-flex items-center cursor-pointer">
-			<input
-				type="checkbox"
-				bind:checked={settings.reasoningEnabled}
-				class="sr-only peer"
-			/>
-			<div class="w-11 h-6 bg-[var(--bg-secondary)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--accent-primary)]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[var(--border-primary)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--accent-primary)]"></div>
-		</label>
-	</div>
+	{/if}
+
+	<!-- Featherless-specific Settings -->
+	{#if settings.provider === 'featherless'}
+		<div class="border border-[var(--border-primary)] rounded-xl p-4 space-y-4">
+			<h3 class="font-medium text-[var(--text-primary)]">Featherless Parameters</h3>
+
+			<!-- Top K -->
+			<div>
+				<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+					Top K: {settings.topK ?? -1}
+				</label>
+				<input
+					type="range"
+					bind:value={settings.topK}
+					min="-1"
+					max="100"
+					step="1"
+					class="w-full accent-[var(--accent-primary)]"
+				/>
+				<p class="text-xs text-[var(--text-muted)] mt-1">
+					Limits tokens to top K most likely (-1 = disabled)
+				</p>
+			</div>
+
+			<!-- Min P -->
+			<div>
+				<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+					Min P: {(settings.minP ?? 0).toFixed(2)}
+				</label>
+				<input
+					type="range"
+					bind:value={settings.minP}
+					min="0"
+					max="1"
+					step="0.01"
+					class="w-full accent-[var(--accent-primary)]"
+				/>
+				<p class="text-xs text-[var(--text-muted)] mt-1">
+					Minimum probability threshold for tokens (0 = disabled)
+				</p>
+			</div>
+
+			<!-- Repetition Penalty -->
+			<div>
+				<label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+					Repetition Penalty: {(settings.repetitionPenalty ?? 1.0).toFixed(2)}
+				</label>
+				<input
+					type="range"
+					bind:value={settings.repetitionPenalty}
+					min="1"
+					max="2"
+					step="0.05"
+					class="w-full accent-[var(--accent-primary)]"
+				/>
+				<p class="text-xs text-[var(--text-muted)] mt-1">
+					Penalize repeated tokens (1.0 = no penalty)
+				</p>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Advanced Settings -->
 	<details class="border border-[var(--border-primary)] rounded-xl">
