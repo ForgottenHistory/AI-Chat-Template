@@ -134,17 +134,8 @@
 		font-style: italic;
 	}
 
-	.chat-message.user :global(.rp-action) {
-		color: rgb(199 210 254); /* indigo-200 for contrast on gradient */
-		font-style: italic;
-	}
-
 	.chat-message :global(.rp-dialogue) {
-		color: var(--accent-hover); /* indigo-400 */
-	}
-
-	.chat-message.user :global(.rp-dialogue) {
-		color: rgb(254 240 138); /* yellow-200 for contrast */
+		color: var(--accent-hover);
 	}
 
 	.chat-message :global(strong) {
@@ -163,20 +154,12 @@
 		font-size: 0.9em;
 	}
 
-	.chat-message.user :global(code) {
-		background: rgba(255, 255, 255, 0.2);
-	}
-
 	.chat-message :global(pre) {
 		background: rgba(0, 0, 0, 0.2);
 		padding: 0.75em;
 		border-radius: 0.5em;
 		overflow-x: auto;
 		margin: 0.5em 0;
-	}
-
-	.chat-message.user :global(pre) {
-		background: rgba(255, 255, 255, 0.1);
 	}
 
 	.chat-message :global(pre code) {
@@ -199,11 +182,6 @@
 		padding-left: 0.75em;
 		margin: 0.5em 0;
 		color: var(--text-secondary);
-	}
-
-	.chat-message.user :global(blockquote) {
-		border-left-color: rgba(255, 255, 255, 0.5);
-		color: rgba(255, 255, 255, 0.8);
 	}
 
 	.chat-message :global(img) {

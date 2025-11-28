@@ -74,8 +74,8 @@
 	<div class="flex flex-col gap-2 max-w-[70%]">
 		<div
 			class="rounded-2xl px-4 py-3 {isUser
-				? 'bg-gradient-to-r from-[var(--user-bubble-from)] to-[var(--user-bubble-to)] text-white'
-				: 'bg-[var(--assistant-bubble)] border border-[var(--assistant-border)] text-[var(--text-primary)]'} {isEditing ? 'ring-2 ring-[var(--accent-primary)]' : ''}"
+				? 'bg-[var(--assistant-bubble)] border-2 border-[var(--accent-primary)] text-[var(--text-primary)]'
+				: 'bg-[var(--assistant-bubble)] border-2 border-[var(--accent-secondary)]/60 text-[var(--text-primary)]'} {isEditing ? 'ring-2 ring-[var(--accent-primary)]' : ''}"
 		>
 			{#if showGeneratingPlaceholder}
 				<div class="flex items-center gap-2">
@@ -93,16 +93,16 @@
 					class="outline-none whitespace-pre-wrap"
 					style="min-height: 1.5em;"
 				>{message.content}</div>
-				<div class="flex items-center gap-2 mt-3 pt-2 border-t {isUser ? 'border-white/20' : 'border-[var(--border-primary)]'}">
+				<div class="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border-primary)]">
 					<button
 						onclick={saveEdit}
-						class="px-3 py-1 text-xs font-medium rounded {isUser ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white'} transition"
+						class="px-3 py-1 text-xs font-medium rounded bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white transition"
 					>
 						Save (Ctrl+Enter)
 					</button>
 					<button
 						onclick={cancelEdit}
-						class="px-3 py-1 text-xs font-medium rounded {isUser ? 'text-white/80 hover:text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'} transition"
+						class="px-3 py-1 text-xs font-medium rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
 					>
 						Cancel (Esc)
 					</button>
