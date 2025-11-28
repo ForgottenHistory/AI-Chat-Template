@@ -196,6 +196,7 @@ export const lorebooks = sqliteTable('lorebooks', {
 		.references(() => users.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(),
 	description: text('description'),
+	enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true), // Quick toggle on/off
 	isGlobal: integer('is_global', { mode: 'boolean' }).notNull().default(false), // Apply to all chats
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()

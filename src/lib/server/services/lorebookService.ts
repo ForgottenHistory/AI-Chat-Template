@@ -16,17 +16,18 @@ interface LorebookEntry {
  * Includes global lorebooks and character-specific lorebooks
  */
 async function getActiveEntries(userId: number, characterId: number): Promise<LorebookEntry[]> {
-	// Get global lorebooks for this user
+	// Get global lorebooks for this user (only enabled ones)
 	const globalLorebooks = await db
 		.select()
 		.from(lorebooks)
-		.where(and(eq(lorebooks.userId, userId), eq(lorebooks.isGlobal, true)));
+		.where(and(eq(lorebooks.userId, userId), eq(lorebooks.isGlobal, true), eq(lorebooks.enabled, true)));
 
-	// Get character-specific lorebooks
+	// Get character-specific lorebooks (only enabled ones)
 	const characterLorebookLinks = await db
 		.select({ lorebookId: characterLorebooks.lorebookId })
 		.from(characterLorebooks)
-		.where(eq(characterLorebooks.characterId, characterId));
+		.innerJoin(lorebooks, eq(characterLorebooks.lorebookId, lorebooks.id))
+		.where(and(eq(characterLorebooks.characterId, characterId), eq(lorebooks.enabled, true)));
 
 	const lorebookIds = [
 		...globalLorebooks.map((l) => l.id),

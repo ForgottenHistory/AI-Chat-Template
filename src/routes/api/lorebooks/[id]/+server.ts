@@ -58,14 +58,15 @@ export const PUT: RequestHandler = async ({ params, request, cookies }) => {
 	}
 
 	try {
-		const { name, description, isGlobal } = await request.json();
+		const { name, description, isGlobal, enabled } = await request.json();
 
 		const [updated] = await db
 			.update(lorebooks)
 			.set({
 				name,
 				description,
-				isGlobal
+				isGlobal,
+				enabled
 			})
 			.where(and(eq(lorebooks.id, lorebookId), eq(lorebooks.userId, parseInt(userId))))
 			.returning();

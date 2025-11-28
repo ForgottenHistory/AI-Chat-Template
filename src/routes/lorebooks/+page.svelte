@@ -9,6 +9,7 @@
 		id: number;
 		name: string;
 		description: string | null;
+		enabled: boolean;
 		isGlobal: boolean;
 		entryCount: number;
 		enabledCount: number;
@@ -308,6 +309,28 @@
 			console.error('Failed to toggle entry:', error);
 		}
 	}
+
+	async function toggleLorebookEnabled(lorebook: Lorebook, event: Event) {
+		event.stopPropagation();
+
+		try {
+			const response = await fetch(`/api/lorebooks/${lorebook.id}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ enabled: !lorebook.enabled })
+			});
+
+			if (response.ok) {
+				lorebook.enabled = !lorebook.enabled;
+				lorebooks = [...lorebooks];
+				if (selectedLorebook?.id === lorebook.id) {
+					selectedLorebook = { ...selectedLorebook, enabled: lorebook.enabled };
+				}
+			}
+		} catch (error) {
+			console.error('Failed to toggle lorebook:', error);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -393,18 +416,34 @@
 										onkeydown={(e) => e.key === 'Enter' && selectLorebook(lorebook)}
 										role="button"
 										tabindex="0"
-										class="w-full text-left p-4 hover:bg-[var(--bg-tertiary)] transition cursor-pointer {selectedLorebook?.id === lorebook.id ? 'bg-[var(--bg-tertiary)]' : ''}"
+										class="w-full text-left p-4 hover:bg-[var(--bg-tertiary)] transition cursor-pointer {selectedLorebook?.id === lorebook.id ? 'bg-[var(--bg-tertiary)]' : ''} {!lorebook.enabled ? 'opacity-60' : ''}"
 									>
 										<div class="flex items-center justify-between">
-											<div class="flex-1 min-w-0">
-												<div class="flex items-center gap-2">
-													<span class="font-medium text-[var(--text-primary)] truncate">{lorebook.name}</span>
-													{#if lorebook.isGlobal}
-														<span class="px-2 py-0.5 text-xs bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] rounded-full">Global</span>
-													{/if}
-												</div>
-												<div class="text-sm text-[var(--text-muted)] mt-1">
-													{lorebook.enabledCount}/{lorebook.entryCount} entries enabled
+											<div class="flex items-center gap-3">
+												<!-- Enable/Disable Toggle -->
+												<button
+													onclick={(e) => toggleLorebookEnabled(lorebook, e)}
+													class="p-1 rounded transition {lorebook.enabled ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'}"
+													title={lorebook.enabled ? 'Enabled - click to disable' : 'Disabled - click to enable'}
+												>
+													<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+														{#if lorebook.enabled}
+															<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+														{:else}
+															<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+														{/if}
+													</svg>
+												</button>
+												<div class="flex-1 min-w-0">
+													<div class="flex items-center gap-2">
+														<span class="font-medium text-[var(--text-primary)] truncate">{lorebook.name}</span>
+														{#if lorebook.isGlobal}
+															<span class="px-2 py-0.5 text-xs bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] rounded-full">Global</span>
+														{/if}
+													</div>
+													<div class="text-sm text-[var(--text-muted)] mt-1">
+														{lorebook.enabledCount}/{lorebook.entryCount} entries enabled
+													</div>
 												</div>
 											</div>
 											<div class="flex items-center gap-1 ml-2">
