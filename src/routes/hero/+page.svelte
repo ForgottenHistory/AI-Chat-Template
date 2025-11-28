@@ -8,6 +8,15 @@
 		}
 		body {
 			font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+		}
+		.gradient-text {
+			background: linear-gradient(90deg, #6366f1, #8b5cf6);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			color: transparent;
 		}
 	</style>
 </svelte:head>
@@ -16,7 +25,7 @@
 	<div style="text-align: center; padding: 0 64px; max-width: 100%;">
 		<!-- Main Title -->
 		<h1 style="font-size: 96px; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 16px;">
-			<span style="background: linear-gradient(90deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">AI Chat</span>
+			<span class="gradient-text">AI Chat</span>
 			<span style="color: white;">Template</span>
 		</h1>
 
