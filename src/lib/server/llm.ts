@@ -1,9 +1,7 @@
 import { llmService } from './services/llmService';
 import { llmLogService } from './services/llmLogService';
+import { personaService } from './services/personaService';
 import { logger } from './utils/logger';
-import { db } from './db';
-import { users } from './db/schema';
-import { eq } from 'drizzle-orm';
 import type { Message, Character, LlmSettings } from './db/schema';
 import fs from 'fs/promises';
 import path from 'path';
@@ -101,14 +99,9 @@ export async function generateChatCompletion(
 		throw new Error('Invalid character card data');
 	}
 
-	// Get user display name
-	const [user] = await db
-		.select()
-		.from(users)
-		.where(eq(users.id, settings.userId))
-		.limit(1);
-
-	const userName = user?.displayName || user?.username || 'User';
+	// Get active user info (persona or default profile)
+	const userInfo = await personaService.getActiveUserInfo(settings.userId);
+	const userName = userInfo.name;
 
 	// Load system prompt from file
 	const basePrompt = await loadSystemPromptFromFile();
@@ -215,14 +208,9 @@ export async function generateImpersonation(
 		throw new Error('Invalid character card data');
 	}
 
-	// Get user display name
-	const [user] = await db
-		.select()
-		.from(users)
-		.where(eq(users.id, settings.userId))
-		.limit(1);
-
-	const userName = user?.displayName || user?.username || 'User';
+	// Get active user info (persona or default profile)
+	const userInfo = await personaService.getActiveUserInfo(settings.userId);
+	const userName = userInfo.name;
 
 	// Load impersonate prompt from file
 	const basePrompt = await loadImpersonatePromptFromFile();

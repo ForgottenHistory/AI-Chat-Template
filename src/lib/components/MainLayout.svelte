@@ -8,10 +8,18 @@
 		currentPath: string;
 	}
 
+	interface ActivePersonaInfo {
+		name: string;
+		description: string | null;
+		avatarData: string | null;
+		personaId: number | null;
+	}
+
 	let { user, currentPath }: Props = $props();
 
 	let sidebarCollapsed = $state(false);
 	let characters = $state<Character[]>(getCharactersCache());
+	let activePersona = $state<ActivePersonaInfo | null>(null);
 
 	onMount(() => {
 		// Load sidebar collapsed state from localStorage
@@ -25,16 +33,37 @@
 			loadCharacters();
 		}
 
+		// Load active persona
+		loadActivePersona();
+
 		// Listen for character updates from other components
 		const handleCharacterUpdate = () => {
 			loadCharacters();
 		};
 		window.addEventListener('characterUpdated', handleCharacterUpdate);
 
+		// Listen for persona updates
+		const handlePersonaUpdate = () => {
+			loadActivePersona();
+		};
+		window.addEventListener('personaUpdated', handlePersonaUpdate);
+
 		return () => {
 			window.removeEventListener('characterUpdated', handleCharacterUpdate);
+			window.removeEventListener('personaUpdated', handlePersonaUpdate);
 		};
 	});
+
+	async function loadActivePersona() {
+		try {
+			const response = await fetch('/api/personas/active');
+			if (response.ok) {
+				activePersona = await response.json();
+			}
+		} catch (error) {
+			console.error('Failed to load active persona:', error);
+		}
+	}
 
 	// Save sidebar state when it changes
 	$effect(() => {
@@ -178,15 +207,29 @@
 						<div
 							class="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-full blur-sm opacity-50"
 						></div>
-						<div
-							class="relative w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white font-bold shadow-md"
-						>
-							{user.displayName.charAt(0).toUpperCase()}
-						</div>
+						{#if activePersona?.avatarData}
+							<img
+								src={activePersona.avatarData}
+								alt={activePersona.name}
+								class="relative w-10 h-10 rounded-full object-cover shadow-md"
+							/>
+						{:else if user.avatarData && !activePersona?.personaId}
+							<img
+								src={user.avatarData}
+								alt={user.displayName}
+								class="relative w-10 h-10 rounded-full object-cover shadow-md"
+							/>
+						{:else}
+							<div
+								class="relative w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center text-white font-bold shadow-md"
+							>
+								{(activePersona?.name || user.displayName).charAt(0).toUpperCase()}
+							</div>
+						{/if}
 					</div>
 					<div class="flex-1 min-w-0">
-						<h3 class="font-bold text-[var(--text-primary)] truncate text-sm">{user.displayName}</h3>
-						<p class="text-xs text-[var(--text-muted)] truncate">{user.username}</p>
+						<h3 class="font-bold text-[var(--text-primary)] truncate text-sm">{activePersona?.name || user.displayName}</h3>
+						<p class="text-xs text-[var(--text-muted)] truncate">{activePersona?.personaId ? 'Persona' : user.username}</p>
 					</div>
 				</a>
 				<a

@@ -7,6 +7,20 @@ export const users = sqliteTable('users', {
 	passwordHash: text('password_hash').notNull(),
 	bio: text('bio'),
 	avatarData: text('avatar_data'), // Base64 image data
+	activePersonaId: integer('active_persona_id'), // Currently active persona (null = use user profile)
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
+export const userPersonas = sqliteTable('user_personas', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	name: text('name').notNull(),
+	description: text('description'), // Description/bio for this persona
+	avatarData: text('avatar_data'), // Base64 image data for persona
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())
@@ -200,6 +214,8 @@ export const messages = sqliteTable('messages', {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type UserPersona = typeof userPersonas.$inferSelect;
+export type NewUserPersona = typeof userPersonas.$inferInsert;
 export type LlmSettings = typeof llmSettings.$inferSelect;
 export type NewLlmSettings = typeof llmSettings.$inferInsert;
 export type DecisionEngineSettings = typeof decisionEngineSettings.$inferSelect;
