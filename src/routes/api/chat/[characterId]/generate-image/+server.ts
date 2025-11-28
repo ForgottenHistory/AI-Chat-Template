@@ -24,14 +24,15 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
 			return json({ error: 'Invalid type. Must be: all, character, user, or scene' }, { status: 400 });
 		}
 
-		// Find conversation
+		// Find active conversation (branch)
 		const [conversation] = await db
 			.select()
 			.from(conversations)
 			.where(
 				and(
 					eq(conversations.userId, parseInt(userId)),
-					eq(conversations.characterId, characterId)
+					eq(conversations.characterId, characterId),
+					eq(conversations.isActive, true)
 				)
 			)
 			.limit(1);

@@ -14,9 +14,10 @@
 		onSwipe: (direction: 'left' | 'right') => void;
 		onSaveEdit: (content: string) => void;
 		onDelete: () => void;
+		onBranch?: () => void;
 	}
 
-	let { message, index, isLast, charName, userName, generating, onSwipe, onSaveEdit, onDelete }: Props = $props();
+	let { message, index, isLast, charName, userName, generating, onSwipe, onSaveEdit, onDelete, onBranch }: Props = $props();
 
 	// Reasoning modal state
 	let showReasoningModal = $state(false);
@@ -168,6 +169,7 @@
 			{onSwipe}
 			onEdit={startEdit}
 			{onDelete}
+			{onBranch}
 			onShowReasoning={() => showReasoningModal = true}
 			disabled={isEditing || generating}
 		/>

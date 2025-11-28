@@ -40,14 +40,15 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
 			return json({ error: 'Character not found' }, { status: 404 });
 		}
 
-		// Get conversation
+		// Get active conversation (branch)
 		const [conversation] = await db
 			.select()
 			.from(conversations)
 			.where(
 				and(
 					eq(conversations.userId, parseInt(userId)),
-					eq(conversations.characterId, characterId)
+					eq(conversations.characterId, characterId),
+					eq(conversations.isActive, true)
 				)
 			)
 			.limit(1);

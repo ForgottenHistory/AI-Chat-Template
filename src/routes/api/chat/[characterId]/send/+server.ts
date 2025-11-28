@@ -25,14 +25,15 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 			return json({ error: 'Message is required' }, { status: 400 });
 		}
 
-		// Find or create conversation
+		// Find active conversation (branch) or create one
 		let [conversation] = await db
 			.select()
 			.from(conversations)
 			.where(
 				and(
 					eq(conversations.userId, parseInt(userId)),
-					eq(conversations.characterId, characterId)
+					eq(conversations.characterId, characterId),
+					eq(conversations.isActive, true)
 				)
 			)
 			.limit(1);
@@ -42,7 +43,8 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 				.insert(conversations)
 				.values({
 					userId: parseInt(userId),
-					characterId
+					characterId,
+					isActive: true
 				})
 				.returning();
 		}

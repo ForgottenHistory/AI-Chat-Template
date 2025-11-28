@@ -17,9 +17,10 @@
 		onSwipe: (messageId: number, direction: 'left' | 'right') => void;
 		onSaveEdit: (messageId: number, index: number, content: string) => void;
 		onDelete: (messageId: number, index: number) => void;
+		onBranch?: (messageId: number) => void;
 	}
 
-	let { messages, loading, isTyping, generating, charName, userName, charAvatar, userAvatar, chatLayout = 'bubbles', avatarStyle = 'circle', onSwipe, onSaveEdit, onDelete }: Props = $props();
+	let { messages, loading, isTyping, generating, charName, userName, charAvatar, userAvatar, chatLayout = 'bubbles', avatarStyle = 'circle', onSwipe, onSaveEdit, onDelete, onBranch }: Props = $props();
 
 	let container: HTMLDivElement | undefined = $state();
 
@@ -63,6 +64,7 @@
 						onSwipe={(direction) => onSwipe(message.id, direction)}
 						onSaveEdit={(content) => onSaveEdit(message.id, index, content)}
 						onDelete={() => onDelete(message.id, index)}
+						onBranch={onBranch ? () => onBranch(message.id) : undefined}
 					/>
 				{:else}
 					<MessageBubble
@@ -75,6 +77,7 @@
 						onSwipe={(direction) => onSwipe(message.id, direction)}
 						onSaveEdit={(content) => onSaveEdit(message.id, index, content)}
 						onDelete={() => onDelete(message.id, index)}
+						onBranch={onBranch ? () => onBranch(message.id) : undefined}
 					/>
 				{/if}
 			{/each}

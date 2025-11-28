@@ -36,6 +36,18 @@
 	let userAvatar = $state<string | null>(null);
 	let userName = $state<string | null>(null);
 
+	// Branching state
+	interface Branch {
+		id: number;
+		name: string | null;
+		isActive: boolean;
+		createdAt: Date;
+	}
+	let branches = $state<Branch[]>([]);
+	let activeBranchId = $state<number | null>(null);
+	let showBranchPanel = $state(false);
+	let creatingBranch = $state(false);
+
 	// Image generation modal state
 	let showImageModal = $state(false);
 	let imageModalLoading = $state(false);
@@ -157,6 +169,8 @@
 			const result = await response.json();
 			conversationId = result.conversationId;
 			messages = result.messages || [];
+			branches = result.branches || [];
+			activeBranchId = result.activeBranchId;
 
 			if (conversationId) {
 				joinConversation(conversationId);
@@ -167,6 +181,85 @@
 			console.error('Failed to load conversation:', error);
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function createBranch(messageId: number, name?: string) {
+		if (creatingBranch) return;
+		creatingBranch = true;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/branches`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ messageId, name })
+			});
+
+			if (response.ok) {
+				// Leave old conversation room
+				if (conversationId) {
+					leaveConversation(conversationId);
+				}
+				// Reload to get new branch
+				await loadConversation();
+			} else {
+				alert('Failed to create branch');
+			}
+		} catch (error) {
+			console.error('Failed to create branch:', error);
+			alert('Failed to create branch');
+		} finally {
+			creatingBranch = false;
+		}
+	}
+
+	async function switchBranch(branchId: number) {
+		if (branchId === activeBranchId) return;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/branches/${branchId}`, {
+				method: 'PUT'
+			});
+
+			if (response.ok) {
+				// Leave old conversation room
+				if (conversationId) {
+					leaveConversation(conversationId);
+				}
+				// Reload to get new branch messages
+				await loadConversation();
+			} else {
+				alert('Failed to switch branch');
+			}
+		} catch (error) {
+			console.error('Failed to switch branch:', error);
+			alert('Failed to switch branch');
+		}
+	}
+
+	async function deleteBranch(branchId: number) {
+		if (!confirm('Delete this branch? All messages will be lost.')) return;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/branches/${branchId}`, {
+				method: 'DELETE'
+			});
+
+			if (response.ok) {
+				// If we deleted the active branch, reload
+				if (branchId === activeBranchId) {
+					if (conversationId) {
+						leaveConversation(conversationId);
+					}
+				}
+				await loadConversation();
+			} else {
+				const result = await response.json();
+				alert(result.error || 'Failed to delete branch');
+			}
+		} catch (error) {
+			console.error('Failed to delete branch:', error);
+			alert('Failed to delete branch');
 		}
 	}
 
@@ -536,8 +629,10 @@
 		<ChatHeader
 			{character}
 			{conversationId}
+			branchCount={branches.length}
 			onReset={resetConversation}
 			onBack={() => window.location.href = '/library'}
+			onToggleBranches={() => showBranchPanel = !showBranchPanel}
 		/>
 
 		<!-- Chat Area with Character Image -->
@@ -624,7 +719,62 @@
 				onSwipe={swipeMessage}
 				onSaveEdit={saveMessageEdit}
 				onDelete={deleteMessageAndBelow}
+				onBranch={createBranch}
 			/>
+
+			<!-- Branch Panel (Right Side) -->
+			{#if showBranchPanel}
+				<div class="w-72 flex-shrink-0 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-lg flex flex-col overflow-hidden">
+					<div class="flex items-center justify-between p-3 border-b border-[var(--border-primary)]">
+						<h3 class="font-semibold text-[var(--text-primary)]">Branches</h3>
+						<button
+							onclick={() => showBranchPanel = false}
+							class="p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
+							title="Close panel"
+						>
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+							</svg>
+						</button>
+					</div>
+					<div class="flex-1 overflow-y-auto p-2 space-y-2">
+						{#each branches as branch (branch.id)}
+							<div
+								class="group p-3 rounded-lg cursor-pointer transition {branch.id === activeBranchId ? 'bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-primary)] border border-transparent'}"
+								onclick={() => switchBranch(branch.id)}
+								onkeydown={(e) => e.key === 'Enter' && switchBranch(branch.id)}
+								tabindex="0"
+								role="button"
+							>
+								<div class="flex items-center justify-between">
+									<span class="font-medium text-[var(--text-primary)] truncate flex-1">
+										{branch.name || 'Main'}
+									</span>
+									{#if branch.id === activeBranchId}
+										<span class="text-xs text-[var(--accent-primary)] font-medium ml-2">Active</span>
+									{/if}
+								</div>
+								<div class="flex items-center justify-between mt-1">
+									<span class="text-xs text-[var(--text-muted)]">
+										{new Date(branch.createdAt).toLocaleDateString()}
+									</span>
+									{#if branches.length > 1}
+										<button
+											onclick={(e) => { e.stopPropagation(); deleteBranch(branch.id); }}
+											class="p-1 text-[var(--text-muted)] hover:text-[var(--error)] transition opacity-0 group-hover:opacity-100"
+											title="Delete branch"
+										>
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+											</svg>
+										</button>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 
 		<ChatInput

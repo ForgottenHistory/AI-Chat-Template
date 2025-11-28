@@ -248,6 +248,10 @@ export const conversations = sqliteTable('conversations', {
 	characterId: integer('character_id')
 		.notNull()
 		.references(() => characters.id, { onDelete: 'cascade' }),
+	name: text('name'), // Branch name (null for main conversation)
+	parentConversationId: integer('parent_conversation_id'), // ID of conversation this branched from
+	branchPointMessageId: integer('branch_point_message_id'), // Message ID where branch was created
+	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true), // Currently active branch for this character
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())

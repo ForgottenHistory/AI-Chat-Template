@@ -9,11 +9,12 @@
 		onEdit: () => void;
 		onDelete: () => void;
 		onShowReasoning?: () => void;
+		onBranch?: () => void;
 		disabled?: boolean;
 		compact?: boolean; // For inline display in row layout
 	}
 
-	let { message, showSwipe, align, onSwipe, onEdit, onDelete, onShowReasoning, disabled = false, compact = false }: Props = $props();
+	let { message, showSwipe, align, onSwipe, onEdit, onDelete, onShowReasoning, onBranch, disabled = false, compact = false }: Props = $props();
 
 	// Copy feedback state
 	let copied = $state(false);
@@ -126,6 +127,23 @@
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
 		</svg>
 	</button>
+
+	<!-- Branch button (show on hover via parent group, unless compact mode) -->
+	{#if onBranch}
+		<button
+			onclick={onBranch}
+			class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-secondary)] transition {compact ? '' : 'opacity-0 group-hover:opacity-100'}"
+			title="Create branch from here"
+		>
+			<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<circle cx="18" cy="18" r="3"/>
+				<circle cx="6" cy="6" r="3"/>
+				<circle cx="6" cy="18" r="3"/>
+				<path d="M6 9v9"/>
+				<path d="M18 15V9a3 3 0 0 0-3-3H9"/>
+			</svg>
+		</button>
+	{/if}
 
 	<!-- Delete button (show on hover via parent group, unless compact mode) -->
 	<button

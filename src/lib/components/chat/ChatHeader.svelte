@@ -5,11 +5,13 @@
 	interface Props {
 		character: Character | null;
 		conversationId: number | null;
+		branchCount?: number;
 		onReset: () => void;
 		onBack: () => void;
+		onToggleBranches?: () => void;
 	}
 
-	let { character, conversationId, onReset, onBack }: Props = $props();
+	let { character, conversationId, branchCount = 0, onReset, onBack, onToggleBranches }: Props = $props();
 
 	// Load collapsed state from localStorage
 	let collapsed = $state(browser ? localStorage.getItem('chatHeaderCollapsed') !== 'false' : true);
@@ -79,6 +81,28 @@
 
 			<!-- Top Right Buttons -->
 			<div class="absolute top-4 right-4 z-30 flex items-center gap-2">
+				<!-- Branches Button -->
+				{#if onToggleBranches}
+					<button
+						onclick={onToggleBranches}
+						class="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/30 hover:scale-110 transition-all shadow-lg border border-white/20 relative"
+						title="View branches"
+					>
+						<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="18" cy="18" r="3"/>
+							<circle cx="6" cy="6" r="3"/>
+							<circle cx="6" cy="18" r="3"/>
+							<path d="M6 9v9"/>
+							<path d="M18 15V9a3 3 0 0 0-3-3H9"/>
+						</svg>
+						{#if branchCount > 1}
+							<span class="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-primary)] text-white text-xs font-bold rounded-full flex items-center justify-center">
+								{branchCount}
+							</span>
+						{/if}
+					</button>
+				{/if}
+
 				<!-- Collapse/Expand Button -->
 				<button
 					onclick={() => (collapsed = !collapsed)}
