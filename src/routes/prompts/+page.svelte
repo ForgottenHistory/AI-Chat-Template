@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import MainLayout from '$lib/components/MainLayout.svelte';
+	import SavePresetDialog from '$lib/components/settings/SavePresetDialog.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -13,6 +14,13 @@
 	let loading = $state(true);
 	let saving = $state<string | null>(null);
 	let message = $state<{ type: 'success' | 'error'; text: string } | null>(null);
+
+	// Preset management
+	let presets = $state<any[]>([]);
+	let selectedPresetId = $state<string>('');
+	let showSavePresetDialog = $state(false);
+	let savingPreset = $state(false);
+	let deletingPresetId = $state<number | null>(null);
 
 	const tabs = [
 		{ id: 'chat' as const, label: 'Chat', description: 'Prompts for character conversations' },
@@ -212,6 +220,7 @@ Output ONLY comma-separated tags, no explanations.`
 
 	onMount(() => {
 		loadPrompts();
+		loadPresets();
 	});
 
 	async function loadPrompts() {
@@ -226,6 +235,76 @@ Output ONLY comma-separated tags, no explanations.`
 			console.error('Failed to load prompts:', error);
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function loadPresets() {
+		try {
+			const response = await fetch('/api/prompt-presets');
+			const data = await response.json();
+			presets = data.presets || [];
+		} catch (error) {
+			console.error('Failed to load presets:', error);
+		}
+	}
+
+	async function savePreset(name: string) {
+		savingPreset = true;
+		try {
+			const response = await fetch('/api/prompt-presets', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name, prompts })
+			});
+
+			const data = await response.json();
+
+			if (response.ok) {
+				message = { type: 'success', text: 'Preset saved successfully!' };
+				showSavePresetDialog = false;
+				if (data.preset?.id) {
+					selectedPresetId = String(data.preset.id);
+				}
+				await loadPresets();
+				setTimeout(() => (message = null), 3000);
+			} else {
+				message = { type: 'error', text: data.error || 'Failed to save preset' };
+			}
+		} catch (error) {
+			message = { type: 'error', text: 'Failed to save preset' };
+		} finally {
+			savingPreset = false;
+		}
+	}
+
+	function loadPresetSettings(preset: any) {
+		// Apply all prompts from preset
+		prompts = { ...preset.prompts };
+		message = { type: 'success', text: `Loaded preset: ${preset.name}` };
+		setTimeout(() => (message = null), 3000);
+	}
+
+	async function deletePreset(presetId: number) {
+		if (!confirm('Delete this preset?')) return;
+
+		deletingPresetId = presetId;
+		try {
+			const response = await fetch(`/api/prompt-presets/${presetId}`, {
+				method: 'DELETE'
+			});
+
+			if (response.ok) {
+				message = { type: 'success', text: 'Preset deleted successfully!' };
+				selectedPresetId = '';
+				await loadPresets();
+				setTimeout(() => (message = null), 3000);
+			} else {
+				message = { type: 'error', text: 'Failed to delete preset' };
+			}
+		} catch (error) {
+			message = { type: 'error', text: 'Failed to delete preset' };
+		} finally {
+			deletingPresetId = null;
 		}
 	}
 
@@ -298,6 +377,64 @@ Output ONLY comma-separated tags, no explanations.`
 					{message.text}
 				</div>
 			{/if}
+
+			<!-- Presets Section -->
+			<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] p-6 mb-6">
+				<div class="flex items-center justify-between mb-4">
+					<div>
+						<h2 class="text-lg font-semibold text-[var(--text-primary)]">Prompt Presets</h2>
+						<p class="text-sm text-[var(--text-muted)]">Save and load all prompts across all categories</p>
+					</div>
+					<button
+						onclick={() => (showSavePresetDialog = true)}
+						class="px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white font-medium rounded-xl hover:opacity-90 transition flex items-center gap-2"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+						</svg>
+						Save Preset
+					</button>
+				</div>
+				{#if presets.length > 0}
+					<div class="flex items-center gap-3">
+						<select
+							bind:value={selectedPresetId}
+							onchange={(e) => {
+								const presetId = parseInt(e.currentTarget.value);
+								if (presetId) {
+									const preset = presets.find((p) => p.id === presetId);
+									if (preset) loadPresetSettings(preset);
+								}
+							}}
+							class="flex-1 px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+						>
+							<option value="" disabled>Select a preset to load...</option>
+							{#each presets as preset}
+								<option value={String(preset.id)}>{preset.name}</option>
+							{/each}
+						</select>
+						<button
+							onclick={() => {
+								const presetId = parseInt(selectedPresetId);
+								if (presetId) deletePreset(presetId);
+							}}
+							disabled={!selectedPresetId || deletingPresetId !== null}
+							class="px-4 py-3 text-[var(--error)] hover:bg-[var(--error)]/10 disabled:opacity-50 rounded-xl transition border border-[var(--error)]/30 hover:border-[var(--error)]/50"
+							title="Delete selected preset"
+						>
+							{#if deletingPresetId !== null}
+								<div class="w-5 h-5 border-2 border-[var(--error)] border-t-transparent rounded-full animate-spin"></div>
+							{:else}
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+								</svg>
+							{/if}
+						</button>
+					</div>
+				{:else}
+					<p class="text-sm text-[var(--text-muted)] italic">No presets saved yet</p>
+				{/if}
+			</div>
 
 			<!-- Tabs -->
 			<div class="flex flex-wrap gap-2 mb-6">
@@ -404,3 +541,9 @@ Output ONLY comma-separated tags, no explanations.`
 		</div>
 	</div>
 </MainLayout>
+
+<SavePresetDialog
+	bind:show={showSavePresetDialog}
+	saving={savingPreset}
+	onSave={savePreset}
+/>

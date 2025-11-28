@@ -177,6 +177,18 @@ export const characters = sqliteTable('characters', {
 		.$defaultFn(() => new Date())
 });
 
+export const promptPresets = sqliteTable('prompt_presets', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	name: text('name').notNull(),
+	prompts: text('prompts').notNull(), // JSON object of all prompts: { chat: { system: "...", impersonate: "..." }, ... }
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
 export const tagLibrary = sqliteTable('tag_library', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	userId: integer('user_id')
@@ -235,6 +247,8 @@ export type SdSettings = typeof sdSettings.$inferSelect;
 export type NewSdSettings = typeof sdSettings.$inferInsert;
 export type LlmPreset = typeof llmPresets.$inferSelect;
 export type NewLlmPreset = typeof llmPresets.$inferInsert;
+export type PromptPreset = typeof promptPresets.$inferSelect;
+export type NewPromptPreset = typeof promptPresets.$inferInsert;
 export type Character = typeof characters.$inferSelect;
 export type NewCharacter = typeof characters.$inferInsert;
 export type TagLibrary = typeof tagLibrary.$inferSelect;
