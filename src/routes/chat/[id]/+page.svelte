@@ -36,7 +36,7 @@
 	let showImageModal = $state(false);
 	let imageModalLoading = $state(false);
 	let imageModalTags = $state('');
-	let imageModalType = $state<'character' | 'user' | 'scene'>('character');
+	let imageModalType = $state<'character' | 'user' | 'scene' | 'raw'>('character');
 	let chatMessages: ChatMessages;
 	let chatInput: ChatInput;
 	let previousCharacterId: number | null = null;
@@ -197,13 +197,21 @@
 		}
 	}
 
-	async function generateImage(type: 'character' | 'user' | 'scene') {
+	async function generateImage(type: 'character' | 'user' | 'scene' | 'raw') {
 		if (generatingImage || !conversationId) return;
 
-		// Open modal and start loading
+		// Open modal
 		imageModalType = type;
 		imageModalTags = '';
 		showImageModal = true;
+
+		// Raw mode - just open empty modal for manual input
+		if (type === 'raw') {
+			imageModalLoading = false;
+			return;
+		}
+
+		// AI-assisted mode - generate tags from conversation
 		imageModalLoading = true;
 		generatingImage = true;
 
@@ -262,6 +270,33 @@
 
 	function handleImageCancel() {
 		imageModalTags = '';
+	}
+
+	async function handleImageRegenerate() {
+		// Re-trigger tag generation with current type
+		imageModalTags = '';
+		imageModalLoading = true;
+
+		try {
+			const response = await fetch(`/api/chat/${data.characterId}/generate-image`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ type: imageModalType })
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				imageModalTags = result.tags;
+			} else {
+				const error = await response.json();
+				alert(`Failed to regenerate tags: ${error.error || 'Unknown error'}`);
+			}
+		} catch (error) {
+			console.error('Failed to regenerate tags:', error);
+			alert('Failed to regenerate tags');
+		} finally {
+			imageModalLoading = false;
+		}
 	}
 
 	async function resetConversation() {
@@ -569,5 +604,6 @@
 	tags={imageModalTags}
 	type={imageModalType}
 	onGenerate={handleImageGenerate}
+	onRegenerate={handleImageRegenerate}
 	onCancel={handleImageCancel}
 />

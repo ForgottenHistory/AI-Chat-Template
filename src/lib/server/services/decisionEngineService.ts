@@ -1,9 +1,7 @@
 import { decisionEngineSettingsService } from './decisionEngineSettingsService';
-import { queueService } from './queueService';
-import axios from 'axios';
+import { callLlm } from './llmCallService';
 import fs from 'fs/promises';
 import path from 'path';
-import { env } from '$env/dynamic/private';
 
 const PROMPTS_DIR = 'data/prompts';
 
@@ -13,31 +11,17 @@ export interface DecisionResult {
 }
 
 class DecisionEngineService {
-	private promptCache: string | null = null;
-
 	/**
-	 * Load decision prompt from file
+	 * Load decision prompt from file (always reads fresh from disk)
 	 */
 	async loadPrompt(): Promise<string> {
-		if (this.promptCache) {
-			return this.promptCache;
-		}
-
 		try {
 			const content = await fs.readFile(path.join(PROMPTS_DIR, 'decision_system.txt'), 'utf-8');
-			this.promptCache = content.trim();
-			return this.promptCache;
+			return content.trim();
 		} catch (error) {
 			console.error('Failed to load decision prompt, using default:', error);
 			return 'Analyze the conversation and decide if an image should be sent. Respond with send_image: true/false';
 		}
-	}
-
-	/**
-	 * Clear prompt cache (call when prompts are updated)
-	 */
-	clearPromptCache() {
-		this.promptCache = null;
 	}
 
 	/**
@@ -115,45 +99,14 @@ Analyze and respond with your decision:`;
 		messages: { role: string; content: string }[];
 		settings: any;
 	}): Promise<string> {
-		const requestBody: any = {
-			model: settings.model,
+		const result = await callLlm({
 			messages,
-			temperature: settings.temperature,
-			max_tokens: settings.maxTokens,
-			top_p: settings.topP,
-			frequency_penalty: settings.frequencyPenalty,
-			presence_penalty: settings.presencePenalty
-		};
-
-		// Add reasoning parameter if enabled
-		if (settings.reasoningEnabled) {
-			requestBody.reasoning = {
-				enabled: true
-			};
-		}
-
-		const response = await queueService.enqueue(settings.provider, async () => {
-			return await axios.post(
-				'https://openrouter.ai/api/v1/chat/completions',
-				requestBody,
-				{
-					headers: {
-						Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-						'Content-Type': 'application/json',
-						'HTTP-Referer': 'https://localhost:5173',
-						'X-Title': 'AI-Chat-Template'
-					},
-					timeout: 30000
-				}
-			);
+			settings,
+			logType: 'decision',
+			logCharacterName: 'Decision LLM',
+			timeout: 30000
 		});
-
-		let content = response.data.choices[0].message.content;
-		// Strip any <think></think> tags
-		content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-		content = content.replace(/<\/?think>/gi, '').trim();
-
-		return content;
+		return result.content;
 	}
 
 	/**

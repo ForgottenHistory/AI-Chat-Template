@@ -103,6 +103,12 @@ class SDService {
 			const baseNegative = negativePromptOverride?.trim() || mergedSettings.negativePrompt;
 
 			// Build full prompt
+			console.log(`🎨 Building prompt from parts:`);
+			console.log(`  basePrompt: ${basePrompt}`);
+			console.log(`  characterTags: ${characterTags}`);
+			console.log(`  contextTags: ${contextTags}`);
+			console.log(`  additionalPrompt: ${additionalPrompt}`);
+
 			const fullPrompt = [basePrompt, characterTags, contextTags, additionalPrompt]
 				.filter(p => p && p.trim())
 				.join(', ');
@@ -114,7 +120,8 @@ class SDService {
 
 			const startTime = Date.now();
 
-			// Build payload
+			// Build payload - use explicit random seed to ensure different results each time
+			const randomSeed = Math.floor(Math.random() * 2147483647);
 			const payload: any = {
 				prompt: fullPrompt,
 				negative_prompt: fullNegative,
@@ -124,7 +131,7 @@ class SDService {
 				cfg_scale: mergedSettings.cfgScale,
 				sampler_name: mergedSettings.sampler,
 				scheduler: mergedSettings.scheduler,
-				seed: -1,
+				seed: randomSeed,
 				batch_size: 1,
 				n_iter: 1,
 				send_images: true,

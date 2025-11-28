@@ -4,6 +4,12 @@ import { messages, conversations, characters, llmSettings } from '$lib/server/db
 import { eq, and, lt } from 'drizzle-orm';
 import { generateChatCompletion } from '$lib/server/llm';
 import { emitTyping } from '$lib/server/socket';
+import { sdService } from '$lib/server/services/sdService';
+import { sdSettingsService } from '$lib/server/services/sdSettingsService';
+import fs from 'fs/promises';
+import path from 'path';
+
+const IMAGES_DIR = 'data/images';
 
 // POST - Regenerate a message (create new swipe variant)
 export const POST: RequestHandler = async ({ params, cookies }) => {
@@ -75,26 +81,83 @@ export const POST: RequestHandler = async ({ params, cookies }) => {
 			return json({ error: 'LLM settings not found' }, { status: 404 });
 		}
 
-		// Emit typing indicator
-		emitTyping(conversation.id, true);
+		// Check if this is an image message
+		const sdImageMatch = message.content.match(/^\[SD_IMAGE\](.+?)\|(.+?)\[\/SD_IMAGE\]$/s);
+		const isImageMessage = !!sdImageMatch;
 
-		// Generate new response
-		const newContent = await generateChatCompletion(
-			conversationHistory,
-			character,
-			settings,
-			undefined, // no custom template
-			'swipe' // message type for logging
-		);
+		let newContent: string;
+
+		if (isImageMessage) {
+			// Regenerate image using the same prompt (already fully combined)
+			const originalPrompt = sdImageMatch![2];
+
+			// Get user's SD settings
+			const userSettings = await sdSettingsService.getUserSettings(parseInt(userId));
+
+			// Generate new image with the EXACT same prompt - don't re-combine
+			// Pass the full prompt as contextTags and leave others empty
+			const result = await sdService.generateImage({
+				characterTags: '',  // Already in originalPrompt
+				contextTags: originalPrompt,  // This IS the full prompt
+				settings: {
+					steps: userSettings.steps,
+					cfgScale: userSettings.cfgScale,
+					sampler: userSettings.sampler,
+					scheduler: userSettings.scheduler,
+					enableHr: userSettings.enableHr,
+					hrScale: userSettings.hrScale,
+					hrUpscaler: userSettings.hrUpscaler,
+					hrSteps: userSettings.hrSteps,
+					denoisingStrength: userSettings.denoisingStrength,
+					enableAdetailer: userSettings.enableAdetailer,
+					adetailerModel: userSettings.adetailerModel,
+					mainPrompt: '',  // Already in originalPrompt
+					negativePrompt: userSettings.negativePrompt,
+					model: userSettings.model
+				}
+				// No overrides - prompt is already complete
+			});
+
+			if (!result.success) {
+				return json({ error: result.error || 'Failed to generate image' }, { status: 500 });
+			}
+
+			// Ensure images directory exists
+			await fs.mkdir(IMAGES_DIR, { recursive: true });
+
+			// Generate unique filename
+			const timestamp = Date.now();
+			const filename = `${conversation.id}_${timestamp}.png`;
+			const filepath = path.join(IMAGES_DIR, filename);
+
+			// Save image to file
+			await fs.writeFile(filepath, result.imageBuffer!);
+
+			// Create new image content with same prompt
+			newContent = `[SD_IMAGE]/api/images/${filename}|${result.prompt}[/SD_IMAGE]`;
+		} else {
+			// Regular text message - use chat completion
+			// Emit typing indicator
+			emitTyping(conversation.id, true);
+
+			// Generate new response
+			newContent = await generateChatCompletion(
+				conversationHistory,
+				character,
+				settings,
+				undefined, // no custom template
+				'swipe' // message type for logging
+			);
+
+			// Stop typing indicator
+			emitTyping(conversation.id, false);
+		}
 
 		// Parse existing swipes
 		const swipes = message.swipes ? JSON.parse(message.swipes) : [message.content];
 
 		// Add new variant to swipes
 		swipes.push(newContent);
-
-		// Stop typing indicator
-		emitTyping(conversation.id, false);
 
 		// Update message with new swipe
 		await db

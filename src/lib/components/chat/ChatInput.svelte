@@ -8,7 +8,7 @@
 		onGenerate: () => void;
 		onRegenerate: () => void;
 		onImpersonate: () => void;
-		onGenerateImage: (type: 'character' | 'user' | 'scene') => void;
+		onGenerateImage: (type: 'character' | 'user' | 'scene' | 'raw') => void;
 	}
 
 	let { disabled, hasAssistantMessages, impersonating, generatingImage, onSend, onGenerate, onRegenerate, onImpersonate, onGenerateImage }: Props = $props();
@@ -39,7 +39,7 @@
 		}
 	}
 
-	function handleImageGenerate(type: 'character' | 'user' | 'scene') {
+	function handleImageGenerate(type: 'character' | 'user' | 'scene' | 'raw') {
 		showImageDropdown = false;
 		onGenerateImage(type);
 	}
@@ -112,6 +112,16 @@
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
 							</svg>
 							Scene
+						</button>
+						<div class="border-t border-[var(--border-primary)]"></div>
+						<button
+							onclick={() => handleImageGenerate('raw')}
+							class="w-full px-4 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition flex items-center gap-3"
+						>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+							</svg>
+							Raw
 						</button>
 					</div>
 				{/if}

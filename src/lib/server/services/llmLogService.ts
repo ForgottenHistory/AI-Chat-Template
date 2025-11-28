@@ -122,22 +122,47 @@ class LlmLogService {
 			const filename = `${messageType}-${logId}.txt`;
 			const filepath = path.join(this.responsesDir, filename);
 
+			// Extract reasoning if present - check multiple possible locations
+			const message = responseData.choices?.[0]?.message;
+			const reasoning = message?.reasoning || message?.reasoning_content;
+			const reasoningDetails = message?.reasoning_details;
+			const reasoningTokens = responseData.usage?.completion_tokens_details?.reasoning_tokens;
+
 			// Build log content
 			const parts = [
 				`RESPONSE LOG`,
 				`Type: ${messageType}`,
 				`Timestamp: ${new Date().toISOString()}`,
 				`Model: ${responseData.model || 'unknown'}`,
-				``,
-				`--- RAW CONTENT (from API) ---`,
-				rawContent || '(empty)',
-				``,
-				`--- PROCESSED CONTENT (after stripping) ---`,
-				processedContent || '(empty)',
-				``,
-				`--- USAGE ---`,
-				JSON.stringify(responseData.usage || {}, null, 2)
+				``
 			];
+
+			// Add reasoning section if present (plain text)
+			if (reasoning) {
+				parts.push(`--- REASONING ---`);
+				parts.push(reasoning);
+				parts.push(``);
+			}
+
+			// Note if reasoning was encrypted (e.g., Grok)
+			if (reasoningDetails?.length > 0) {
+				const encryptedReasoning = reasoningDetails.find((r: any) => r.type === 'reasoning.encrypted');
+				if (encryptedReasoning) {
+					parts.push(`--- REASONING (encrypted by provider) ---`);
+					parts.push(`Reasoning tokens used: ${reasoningTokens || 'unknown'}`);
+					parts.push(`Note: This model encrypts its reasoning output`);
+					parts.push(``);
+				}
+			}
+
+			parts.push(`--- RAW CONTENT (from API) ---`);
+			parts.push(rawContent || '(empty)');
+			parts.push(``);
+			parts.push(`--- PROCESSED CONTENT (after stripping) ---`);
+			parts.push(processedContent || '(empty)');
+			parts.push(``);
+			parts.push(`--- USAGE ---`);
+			parts.push(JSON.stringify(responseData.usage || {}, null, 2));
 
 			const logContent = parts.join('\n');
 

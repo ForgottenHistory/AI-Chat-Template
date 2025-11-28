@@ -10,11 +10,11 @@
 
 	let { content, role, charName = 'Character', userName = 'User' }: Props = $props();
 
-	// Check if this is an SD image message
-	const sdImageMatch = content.match(/^\[SD_IMAGE\](.+?)\|(.+?)\[\/SD_IMAGE\]$/s);
-	const isImageMessage = !!sdImageMatch;
-	const imageSrc = sdImageMatch?.[1] || '';
-	const imagePrompt = sdImageMatch?.[2] || '';
+	// Check if this is an SD image message (reactive to content changes)
+	let sdImageMatch = $derived(content.match(/^\[SD_IMAGE\](.+?)\|(.+?)\[\/SD_IMAGE\]$/s));
+	let isImageMessage = $derived(!!sdImageMatch);
+	let imageSrc = $derived(sdImageMatch?.[1] || '');
+	let imagePrompt = $derived(sdImageMatch?.[2] || '');
 
 	// Lightbox state
 	let showLightbox = $state(false);

@@ -171,11 +171,20 @@ class LlmService {
 				}
 
 				const message = response.data.choices[0].message;
-				let content = message.content;
+				let content = message.content || '';
 
 				// Strip any <think></think> tags (reasoning output)
 				content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 				content = content.replace(/<\/?think>/gi, '').trim();
+
+				// Check if model returned empty content (e.g., used all tokens on reasoning)
+				if (!content) {
+					const reasoningTokens = response.data.usage?.completion_tokens_details?.reasoning_tokens;
+					if (reasoningTokens) {
+						throw new Error(`Model used ${reasoningTokens} tokens on reasoning but produced no output. Try increasing max tokens in settings.`);
+					}
+					throw new Error('Model returned empty response');
+				}
 
 				console.log(`✅ ${providerConfig.name} Response:`, {
 					provider,
