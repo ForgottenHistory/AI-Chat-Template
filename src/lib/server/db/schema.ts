@@ -8,6 +8,8 @@ export const users = sqliteTable('users', {
 	bio: text('bio'),
 	avatarData: text('avatar_data'), // Base64 image data
 	activePersonaId: integer('active_persona_id'), // Currently active persona (null = use user profile)
+	chatLayout: text('chat_layout').notNull().default('bubbles'), // 'bubbles' (chat app style) or 'discord' (full-width rows)
+	avatarStyle: text('avatar_style').notNull().default('circle'), // 'circle' or 'rounded' (rounded square)
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())

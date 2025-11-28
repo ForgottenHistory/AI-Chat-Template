@@ -31,6 +31,9 @@
 	let generatingSD = $state(false);
 	let conversationId = $state<number | null>(null);
 	let isTyping = $state(false);
+	let chatLayout = $state<'bubbles' | 'discord'>('bubbles');
+	let avatarStyle = $state<'circle' | 'rounded'>('circle');
+	let userAvatar = $state<string | null>(null);
 
 	// Image generation modal state
 	let showImageModal = $state(false);
@@ -45,6 +48,7 @@
 
 	onMount(() => {
 		initSocket();
+		loadSettings();
 
 		onNewMessage((message: Message) => {
 			if (!messages.find((m) => m.id === message.id)) {
@@ -81,8 +85,16 @@
 
 		window.addEventListener('keydown', handleKeydown);
 
+		// Listen for settings updates from the general settings page
+		const handleSettingsUpdate = (e: CustomEvent<{ chatLayout: 'bubbles' | 'discord'; avatarStyle: 'circle' | 'rounded' }>) => {
+			chatLayout = e.detail.chatLayout;
+			if (e.detail.avatarStyle) avatarStyle = e.detail.avatarStyle;
+		};
+		window.addEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
+
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
+			window.removeEventListener('settingsUpdated', handleSettingsUpdate as EventListener);
 		};
 	});
 
@@ -104,6 +116,20 @@
 		}
 		removeAllListeners();
 	});
+
+	async function loadSettings() {
+		try {
+			const response = await fetch('/api/settings');
+			if (response.ok) {
+				const result = await response.json();
+				chatLayout = result.chatLayout || 'bubbles';
+				avatarStyle = result.avatarStyle || 'circle';
+				userAvatar = result.userAvatar || null;
+			}
+		} catch (error) {
+			console.error('Failed to load settings:', error);
+		}
+	}
 
 	async function loadCharacter() {
 		try {
@@ -576,6 +602,10 @@
 				generating={regenerating}
 				charName={character?.name}
 				userName={data.user?.displayName}
+				charAvatar={character?.thumbnailData || character?.imageData}
+				{userAvatar}
+				{chatLayout}
+				{avatarStyle}
 				onSwipe={swipeMessage}
 				onSaveEdit={saveMessageEdit}
 				onDelete={deleteMessageAndBelow}

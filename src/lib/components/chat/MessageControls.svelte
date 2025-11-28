@@ -9,9 +9,10 @@
 		onEdit: () => void;
 		onDelete: () => void;
 		disabled?: boolean;
+		compact?: boolean; // For inline display in row layout
 	}
 
-	let { message, showSwipe, align, onSwipe, onEdit, onDelete, disabled = false }: Props = $props();
+	let { message, showSwipe, align, onSwipe, onEdit, onDelete, disabled = false, compact = false }: Props = $props();
 
 	function getSwipes(): string[] {
 		if (!message.swipes) return [message.content];
@@ -55,10 +56,10 @@
 		</button>
 	{/if}
 
-	<!-- Edit button (show on hover via parent group) -->
+	<!-- Edit button (show on hover via parent group, unless compact mode) -->
 	<button
 		onclick={onEdit}
-		class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition opacity-0 group-hover:opacity-100"
+		class="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition {compact ? '' : 'opacity-0 group-hover:opacity-100'}"
 		title="Edit message"
 	>
 		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,10 +67,10 @@
 		</svg>
 	</button>
 
-	<!-- Delete button (show on hover via parent group) -->
+	<!-- Delete button (show on hover via parent group, unless compact mode) -->
 	<button
 		onclick={onDelete}
-		class="p-1.5 text-[var(--text-muted)] hover:text-[var(--error)] transition opacity-0 group-hover:opacity-100"
+		class="p-1.5 text-[var(--text-muted)] hover:text-[var(--error)] transition {compact ? '' : 'opacity-0 group-hover:opacity-100'}"
 		title="Delete this message and all below"
 	>
 		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
