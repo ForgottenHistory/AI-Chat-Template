@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import MainLayout from '$lib/components/MainLayout.svelte';
 	import SavePresetDialog from '$lib/components/settings/SavePresetDialog.svelte';
+	import { estimateTokens } from '$lib/utils/tokenCount';
 
 	let { data }: { data: PageData } = $props();
 
@@ -482,7 +483,13 @@ Output ONLY comma-separated tags, no explanations.`
 										class="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono text-sm resize-y"
 									></textarea>
 
-									<div class="flex items-center gap-3 mt-4">
+									<div class="flex items-center justify-between mt-2">
+										<span class="text-xs text-[var(--text-muted)]">
+											~{estimateTokens(getPromptValue(activeTab, name) || config.default).toLocaleString()} tokens
+										</span>
+									</div>
+
+									<div class="flex items-center gap-3 mt-3">
 										<button
 											onclick={() => savePrompt(activeTab, name)}
 											disabled={saving !== null}

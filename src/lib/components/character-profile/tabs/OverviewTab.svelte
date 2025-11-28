@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Character } from '$lib/server/db/schema';
 	import CollapsibleSection from '../CollapsibleSection.svelte';
+	import { estimateTokens } from '$lib/utils/tokenCount';
 
 	interface Props {
 		character: Character;
@@ -268,7 +269,10 @@
 	<!-- Description -->
 	<div>
 		<div class="flex items-center justify-between mb-2 group">
-			<h4 class="text-sm font-medium text-[var(--text-secondary)]">Description</h4>
+			<div class="flex items-center gap-2">
+				<h4 class="text-sm font-medium text-[var(--text-secondary)]">Description</h4>
+				<span class="text-xs text-[var(--text-muted)]">~{estimateTokens(editingDescription ? editedDescription : (character.description || data.description)).toLocaleString()} tokens</span>
+			</div>
 			{#if !editingDescription}
 				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
 					{#if character.description || data.description}
@@ -365,7 +369,10 @@
 	<!-- Scenario -->
 	<div class="mt-6">
 		<div class="flex items-center justify-between mb-2 group">
-			<h4 class="text-sm font-medium text-[var(--text-secondary)]">Scenario</h4>
+			<div class="flex items-center gap-2">
+				<h4 class="text-sm font-medium text-[var(--text-secondary)]">Scenario</h4>
+				<span class="text-xs text-[var(--text-muted)]">~{estimateTokens(editingScenario ? editedScenario : data.scenario).toLocaleString()} tokens</span>
+			</div>
 			{#if !editingScenario}
 				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
 					{#if data.scenario}
@@ -462,6 +469,7 @@
 	<!-- Collapsible: Personality -->
 	<CollapsibleSection
 		title="Personality"
+		badge="~{estimateTokens(editingPersonality ? editedPersonality : data.personality).toLocaleString()} tokens"
 		expanded={personalityExpanded}
 		onToggle={() => (personalityExpanded = !personalityExpanded)}
 	>

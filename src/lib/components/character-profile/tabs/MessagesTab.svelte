@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CollapsibleSection from '../CollapsibleSection.svelte';
+	import { estimateTokens } from '$lib/utils/tokenCount';
 
 	interface Props {
 		data: {
@@ -266,7 +267,10 @@
 	<!-- First Message (always visible) -->
 	<div>
 		<div class="flex items-center justify-between mb-2 group">
-			<h4 class="text-sm font-medium text-[var(--text-secondary)]">First Message</h4>
+			<div class="flex items-center gap-2">
+				<h4 class="text-sm font-medium text-[var(--text-secondary)]">First Message</h4>
+				<span class="text-xs text-[var(--text-muted)]">~{estimateTokens(editingFirstMes ? editFirstMes : data.first_mes).toLocaleString()} tokens</span>
+			</div>
 			{#if !editingFirstMes}
 				<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
 					{#if data.first_mes}
@@ -366,6 +370,7 @@
 	<!-- Collapsible: Message Example -->
 	<CollapsibleSection
 		title="Message Example"
+		badge="~{estimateTokens(editingMesExample ? editMesExample : data.mes_example).toLocaleString()} tokens"
 		expanded={mesExampleExpanded}
 		onToggle={() => (mesExampleExpanded = !mesExampleExpanded)}
 	>
@@ -472,7 +477,10 @@
 				{#each data.alternate_greetings as greeting, index}
 					<div class="p-4 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg">
 						<div class="flex items-center justify-between mb-2 group">
-							<span class="text-xs font-medium text-[var(--text-muted)]">Greeting {index + 2}</span>
+							<div class="flex items-center gap-2">
+								<span class="text-xs font-medium text-[var(--text-muted)]">Greeting {index + 2}</span>
+								<span class="text-xs text-[var(--text-muted)]">~{estimateTokens(editingGreetingIndex === index ? editGreeting : greeting).toLocaleString()} tokens</span>
+							</div>
 							{#if editingGreetingIndex !== index}
 								<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
 									{#if greeting}
