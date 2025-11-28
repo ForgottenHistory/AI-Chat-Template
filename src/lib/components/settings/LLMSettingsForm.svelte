@@ -10,6 +10,7 @@
 		frequencyPenalty: number;
 		presencePenalty: number;
 		contextWindow: number;
+		reasoningEnabled?: boolean;
 	}
 
 	let {
@@ -99,6 +100,24 @@
 			class="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 		/>
 		<p class="text-xs text-[var(--text-muted)] mt-1">Total tokens available for context</p>
+	</div>
+
+	<!-- Reasoning -->
+	<div class="flex items-center justify-between p-4 bg-[var(--bg-tertiary)] rounded-xl">
+		<div>
+			<label class="block text-sm font-medium text-[var(--text-primary)]">Extended Thinking</label>
+			<p class="text-xs text-[var(--text-muted)] mt-1">
+				Enable reasoning for models that support it (OpenRouter)
+			</p>
+		</div>
+		<label class="relative inline-flex items-center cursor-pointer">
+			<input
+				type="checkbox"
+				bind:checked={settings.reasoningEnabled}
+				class="sr-only peer"
+			/>
+			<div class="w-11 h-6 bg-[var(--bg-secondary)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--accent-primary)]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[var(--border-primary)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--accent-primary)]"></div>
+		</label>
 	</div>
 
 	<!-- Advanced Settings -->

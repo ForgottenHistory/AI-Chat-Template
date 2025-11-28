@@ -14,7 +14,8 @@ const DEFAULT_SETTINGS = {
 	topP: 1.0,
 	frequencyPenalty: 0.0,
 	presencePenalty: 0.0,
-	contextWindow: 4000
+	contextWindow: 4000,
+	reasoningEnabled: false
 };
 
 class ImageLlmSettingsService {

@@ -24,7 +24,8 @@ export const llmSettings = sqliteTable('llm_settings', {
 	topP: real('top_p').notNull().default(1.0),
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
-	contextWindow: integer('context_window').notNull().default(8000)
+	contextWindow: integer('context_window').notNull().default(8000),
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
 });
 
 export const decisionEngineSettings = sqliteTable('decision_engine_settings', {
@@ -39,7 +40,8 @@ export const decisionEngineSettings = sqliteTable('decision_engine_settings', {
 	topP: real('top_p').notNull().default(1.0),
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
-	contextWindow: integer('context_window').notNull().default(4000)
+	contextWindow: integer('context_window').notNull().default(4000),
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
 });
 
 export const contentLlmSettings = sqliteTable('content_llm_settings', {
@@ -54,7 +56,8 @@ export const contentLlmSettings = sqliteTable('content_llm_settings', {
 	topP: real('top_p').notNull().default(1.0),
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
-	contextWindow: integer('context_window').notNull().default(16000)
+	contextWindow: integer('context_window').notNull().default(16000),
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
 });
 
 export const imageLlmSettings = sqliteTable('image_llm_settings', {
@@ -69,7 +72,8 @@ export const imageLlmSettings = sqliteTable('image_llm_settings', {
 	topP: real('top_p').notNull().default(1.0),
 	frequencyPenalty: real('frequency_penalty').notNull().default(0.0),
 	presencePenalty: real('presence_penalty').notNull().default(0.0),
-	contextWindow: integer('context_window').notNull().default(4000)
+	contextWindow: integer('context_window').notNull().default(4000),
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false)
 });
 
 export const sdSettings = sqliteTable('sd_settings', {
@@ -108,6 +112,7 @@ export const llmPresets = sqliteTable('llm_presets', {
 	frequencyPenalty: real('frequency_penalty').notNull(),
 	presencePenalty: real('presence_penalty').notNull(),
 	contextWindow: integer('context_window').notNull(),
+	reasoningEnabled: integer('reasoning_enabled', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())

@@ -123,7 +123,7 @@ class LlmService {
 		});
 
 		// Build request body
-		const requestBody = {
+		const requestBody: any = {
 			model: selectedModel,
 			messages,
 			temperature: selectedTemperature,
@@ -132,6 +132,13 @@ class LlmService {
 			frequency_penalty: userSettings.frequencyPenalty,
 			presence_penalty: userSettings.presencePenalty
 		};
+
+		// Add reasoning parameter if enabled
+		if (userSettings.reasoningEnabled) {
+			requestBody.reasoning = {
+				enabled: true
+			};
+		}
 
 		// Retry logic with exponential backoff
 		const maxRetries = 3;

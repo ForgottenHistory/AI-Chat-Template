@@ -1,7 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { llmPresets } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // GET - Fetch all LLM presets for user
 export const GET: RequestHandler = async ({ cookies }) => {
@@ -41,28 +41,62 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			topP,
 			frequencyPenalty,
 			presencePenalty,
-			contextWindow
+			contextWindow,
+			reasoningEnabled
 		} = await request.json();
 
 		if (!name) {
 			return json({ error: 'Preset name is required' }, { status: 400 });
 		}
 
-		const [preset] = await db
-			.insert(llmPresets)
-			.values({
-				userId: parseInt(userId),
-				name,
-				provider,
-				model,
-				temperature,
-				maxTokens,
-				topP,
-				frequencyPenalty,
-				presencePenalty,
-				contextWindow
-			})
-			.returning();
+		const userIdNum = parseInt(userId);
+
+		// Check if preset with same name exists for this user
+		const existing = await db
+			.select()
+			.from(llmPresets)
+			.where(and(eq(llmPresets.userId, userIdNum), eq(llmPresets.name, name)))
+			.limit(1);
+
+		let preset;
+		if (existing[0]) {
+			// Update existing preset
+			const [updated] = await db
+				.update(llmPresets)
+				.set({
+					provider,
+					model,
+					temperature,
+					maxTokens,
+					topP,
+					frequencyPenalty,
+					presencePenalty,
+					contextWindow,
+					reasoningEnabled: reasoningEnabled ?? false
+				})
+				.where(eq(llmPresets.id, existing[0].id))
+				.returning();
+			preset = updated;
+		} else {
+			// Create new preset
+			const [created] = await db
+				.insert(llmPresets)
+				.values({
+					userId: userIdNum,
+					name,
+					provider,
+					model,
+					temperature,
+					maxTokens,
+					topP,
+					frequencyPenalty,
+					presencePenalty,
+					contextWindow,
+					reasoningEnabled: reasoningEnabled ?? false
+				})
+				.returning();
+			preset = created;
+		}
 
 		return json({ preset }, { status: 201 });
 	} catch (error) {

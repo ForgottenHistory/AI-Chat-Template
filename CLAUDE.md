@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI-powered character chat application enabling users to create and chat with AI characters using character cards (v1/v2 format), manage conversations, and configure LLM settings.
 
+## Rules
+- Don't git commit without permission
+- Don't add features that were not part of original request
+
 ## Tech Stack
 
 - **Framework**: SvelteKit 2.47+ with Svelte 5

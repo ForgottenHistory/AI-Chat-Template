@@ -115,7 +115,7 @@ Analyze and respond with your decision:`;
 		messages: { role: string; content: string }[];
 		settings: any;
 	}): Promise<string> {
-		const requestBody = {
+		const requestBody: any = {
 			model: settings.model,
 			messages,
 			temperature: settings.temperature,
@@ -124,6 +124,13 @@ Analyze and respond with your decision:`;
 			frequency_penalty: settings.frequencyPenalty,
 			presence_penalty: settings.presencePenalty
 		};
+
+		// Add reasoning parameter if enabled
+		if (settings.reasoningEnabled) {
+			requestBody.reasoning = {
+				enabled: true
+			};
+		}
 
 		const response = await queueService.enqueue(settings.provider, async () => {
 			return await axios.post(

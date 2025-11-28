@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	interface Preset {
 		id: number;
 		name: string;
@@ -10,6 +12,7 @@
 		frequencyPenalty: number;
 		presencePenalty: number;
 		contextWindow: number;
+		reasoningEnabled?: boolean;
 	}
 
 	let {
@@ -23,9 +26,33 @@
 		onDeletePreset: (presetId: number) => void;
 		deletingPresetId?: number | null;
 	} = $props();
-</script>
 
-{#if presets.length > 0}
+	let selectedPresetId = $state<string>('');
+	let lastPresetsLength = $state(0);
+
+	// Restore/update selection from localStorage when presets change
+	$effect(() => {
+		if (presets.length > 0) {
+			const stored = localStorage.getItem('selectedPresetId');
+			// Update selection if presets were added or on initial load
+			if (stored && presets.some(p => p.id === parseInt(stored))) {
+				if (selectedPresetId !== stored) {
+					selectedPresetId = stored;
+				}
+			}
+			lastPresetsLength = presets.length;
+		}
+	});
+
+	function handleSelectionChange(value: string) {
+		selectedPresetId = value;
+		if (value) {
+			localStorage.setItem('selectedPresetId', value);
+		} else {
+			localStorage.removeItem('selectedPresetId');
+		}
+	}
+</script>
 	<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] p-6 mb-6">
 		<label for="preset-selector" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
 			Load Preset
@@ -33,8 +60,11 @@
 		<div class="flex items-center gap-3">
 			<select
 				id="preset-selector"
+				value={selectedPresetId}
 				onchange={(e) => {
-					const presetId = parseInt(e.currentTarget.value);
+					const value = e.currentTarget.value;
+					handleSelectionChange(value);
+					const presetId = parseInt(value);
 					if (presetId) {
 						const preset = presets.find((p) => p.id === presetId);
 						if (preset) onLoadPreset(preset);
@@ -42,20 +72,19 @@
 				}}
 				class="flex-1 px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
 			>
-				<option value="">Select a preset...</option>
+				<option value="" disabled>Select a preset...</option>
 				{#each presets as preset}
-					<option value={preset.id}>
-						{preset.name} ({preset.model})
+					<option value={String(preset.id)}>
+						{preset.name}
 					</option>
 				{/each}
 			</select>
 			<button
 				onclick={() => {
-					const select = document.getElementById('preset-selector') as HTMLSelectElement;
-					const presetId = parseInt(select?.value || '');
+					const presetId = parseInt(selectedPresetId);
 					if (presetId) {
 						onDeletePreset(presetId);
-						select.value = '';
+						handleSelectionChange('');
 					}
 				}}
 				disabled={deletingPresetId !== null}
@@ -82,4 +111,3 @@
 			Select a preset to load its settings
 		</p>
 	</div>
-{/if}

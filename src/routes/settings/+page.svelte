@@ -22,7 +22,8 @@
 		topP: 1.0,
 		frequencyPenalty: 0.0,
 		presencePenalty: 0.0,
-		contextWindow: 8000
+		contextWindow: 8000,
+		reasoningEnabled: false
 	};
 
 	// Chat LLM settings
@@ -155,18 +156,40 @@
 	async function savePreset(name: string) {
 		savingPreset = true;
 		try {
+			// Get current tab's settings
+			let currentSettings;
+			switch (activeTab) {
+				case 'chat':
+					currentSettings = chatSettings;
+					break;
+				case 'decision':
+					currentSettings = decisionSettings;
+					break;
+				case 'content':
+					currentSettings = contentSettings;
+					break;
+				case 'image':
+					currentSettings = imageSettings;
+					break;
+			}
+
 			const response = await fetch('/api/llm-presets', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					name,
-					...chatSettings
+					...currentSettings
 				})
 			});
 
 			if (response.ok) {
+				const data = await response.json();
 				message = { type: 'success', text: 'Preset saved successfully!' };
 				showSavePresetDialog = false;
+				// Select the newly created preset
+				if (data.preset?.id) {
+					localStorage.setItem('selectedPresetId', String(data.preset.id));
+				}
 				await loadPresets();
 				setTimeout(() => (message = null), 3000);
 			} else {
@@ -181,7 +204,7 @@
 	}
 
 	function loadPresetSettings(preset: any) {
-		chatSettings = {
+		const settings = {
 			provider: preset.provider,
 			model: preset.model,
 			temperature: preset.temperature,
@@ -189,8 +212,26 @@
 			topP: preset.topP,
 			frequencyPenalty: preset.frequencyPenalty,
 			presencePenalty: preset.presencePenalty,
-			contextWindow: preset.contextWindow
+			contextWindow: preset.contextWindow,
+			reasoningEnabled: preset.reasoningEnabled ?? false
 		};
+
+		// Apply preset to the currently active tab's settings
+		switch (activeTab) {
+			case 'chat':
+				chatSettings = settings;
+				break;
+			case 'decision':
+				decisionSettings = settings;
+				break;
+			case 'content':
+				contentSettings = settings;
+				break;
+			case 'image':
+				imageSettings = settings;
+				break;
+		}
+
 		message = { type: 'success', text: `Loaded preset: ${preset.name}` };
 		setTimeout(() => (message = null), 3000);
 		scrollToTop();
@@ -272,15 +313,16 @@
 				{tabs.find(t => t.id === activeTab)?.description}
 			</p>
 
+			<!-- Global Presets Section -->
+			<PresetsSection
+				{presets}
+				onLoadPreset={loadPresetSettings}
+				onDeletePreset={deletePreset}
+				{deletingPresetId}
+			/>
+
 			<!-- Chat Tab -->
 			{#if activeTab === 'chat'}
-				<PresetsSection
-					{presets}
-					onLoadPreset={loadPresetSettings}
-					onDeletePreset={deletePreset}
-					{deletingPresetId}
-				/>
-
 				<div class="bg-[var(--bg-secondary)] rounded-xl shadow-md border border-[var(--border-primary)] overflow-hidden">
 					{#if loading}
 						<SettingsLoadingSkeleton />
@@ -306,6 +348,7 @@
 							bind:settings={decisionSettings}
 							{saving}
 							onSave={saveDecisionSettings}
+							onSavePreset={() => (showSavePresetDialog = true)}
 							onReload={loadSettings}
 						/>
 					{/if}
@@ -322,6 +365,7 @@
 							bind:settings={contentSettings}
 							{saving}
 							onSave={saveContentSettings}
+							onSavePreset={() => (showSavePresetDialog = true)}
 							onReload={loadSettings}
 						/>
 					{/if}
@@ -338,6 +382,7 @@
 							bind:settings={imageSettings}
 							{saving}
 							onSave={saveImageSettings}
+							onSavePreset={() => (showSavePresetDialog = true)}
 							onReload={loadSettings}
 						/>
 					{/if}
