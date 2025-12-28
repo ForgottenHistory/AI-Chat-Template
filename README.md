@@ -4,6 +4,8 @@ A personal-use template for AI character chat applications. Designed to either w
 
 Derived from an AI dating app I made, check it out: https://github.com/ForgottenHistory/Cupid-AI
 
+DynamicTavern, more feature rich RP experience based on this template: https://github.com/ForgottenHistory/DynamicTavern
+
 ![AI Chat](images/chat.png)
 
 ## Features
